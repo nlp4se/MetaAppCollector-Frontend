@@ -1,5 +1,4 @@
 import { Row, Col } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
 
 const Footer = () => {
     const currentYear = new Date().getFullYear();
@@ -8,10 +7,10 @@ const Footer = () => {
     };
 
     return (
-        <footer className="align-items-center">
+        <footer className="footer mt-auto w-100 py-3 bg-light text-center">
             <div className="container-fluid">
                 <Row className="justify-content-center">
-                    <Col xs={12} md={6} className="text-secondary text-center">
+                    <Col xs={12} md={6} className="text-secondary">
                         {currentYear} © <a style={linkStyle} className="text-secondary" href="https://gessi.upc.edu/en" target="_blank" rel="noopener noreferrer">GESSI</a>
                     </Col>
                 </Row>
