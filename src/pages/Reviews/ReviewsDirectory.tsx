@@ -40,6 +40,7 @@ const ReviewsDirectory: React.FC = () => {
     const location = useLocation();
     const { appPackage: stateAppPackage, selectedFeatures: stateSelectedFeatures } = location.state || {};
     const [noResultsShown, setNoResultsShown] = useState(false);
+    const [loadingApps, setLoadingApps] = useState<boolean>(true); // Track loading state
 
     const polarityOptions = ["Positive", "Negative"];
     const topicOptions = [
@@ -65,10 +66,12 @@ const ReviewsDirectory: React.FC = () => {
         if (stateSelectedFeatures && stateSelectedFeatures.length > 0) setSelectedFeatures(stateSelectedFeatures);
     }, [stateAppPackage, stateSelectedFeatures]);
 
+
     useEffect(() => {
         const fetchApps = async () => {
             const appService = new AppService();
             try {
+                setLoadingApps(true);
                 const response = await appService.fetchAllAppsPackages();
                 if (response) {
                     setApps(response.apps.map((app) => app.app_package));
@@ -78,12 +81,11 @@ const ReviewsDirectory: React.FC = () => {
                 }
             } catch (error) {
                 console.error("Error fetching apps:", error);
+            } finally {
+                setLoadingApps(false);
             }
         };
         fetchApps();
-        if (searchTriggered) {
-            fetchReviews(currentPage);
-        }
     }, [currentPage, searchTriggered]);
 
 
@@ -235,9 +237,9 @@ const ReviewsDirectory: React.FC = () => {
     return (
         <div className="mb-5">
             <h1 className="text-secondary">Reviews Directory</h1>
-            {apps.length === 0 && (
+            {!loadingApps && apps.length === 0 && (
                 <Alert variant="warning" className="mt-3 mb-4 d-flex align-items-center">
-                    No applications have been found. Please upload them using the:Tre
+                    No applications have been found. Please upload them using the:
                     <button
                         onClick={() => window.location.href = '/applications/upload'}
                         className="ms-2 btn btn-primary btn-sm"

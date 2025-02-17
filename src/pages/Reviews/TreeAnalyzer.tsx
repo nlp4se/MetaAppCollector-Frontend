@@ -23,6 +23,7 @@ const TreeAnalyzer = () => {
     const [highlightedNodes, setHighlightedNodes] = useState<Set<number>>(new Set());
     const [translate, setTranslate] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
     const treeContainerRef = React.createRef<HTMLDivElement>();
+    const [loadingApps, setLoadingApps] = useState<boolean>(true); // Track loading state
 
     const treeService = new TreeService();
 
@@ -30,6 +31,7 @@ const TreeAnalyzer = () => {
         const fetchApps = async () => {
             const appService = new AppService();
             try {
+                setLoadingApps(true);
                 const response = await appService.fetchAllAppsPackages();
                 if (response) {
                     setApps(response.apps.map((app) => app.app_package));
@@ -39,10 +41,13 @@ const TreeAnalyzer = () => {
                 }
             } catch (error) {
                 console.error("Error fetching apps:", error);
+            } finally {
+                setLoadingApps(false);
             }
         };
         fetchApps();
     }, []);
+
     useEffect(() => {
         if (!selectedApp) return;
 
@@ -267,7 +272,7 @@ const TreeAnalyzer = () => {
     return (
         <Container className="mb-5">
             <h1 className="text-secondary mb-4">Tree Analyzer</h1>
-            {apps.length === 0 && (
+            {!loadingApps && apps.length === 0 && (
                 <Alert variant="warning" className="mt-3 mb-4 d-flex align-items-center">
                     No applications have been found. Please upload them using the:
                     <button
