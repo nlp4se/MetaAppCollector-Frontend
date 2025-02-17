@@ -70,7 +70,7 @@ const SignUpForm = () => {
 
         <Container className="d-flex justify-content-center">
           <Card className="shadow-lg p-4 rounded" style={{ width: "450px" }}>
-            <h2 className="text-center text-secondary mb-4">Sign Up in RE-Miner</h2>
+            <h2 className="text-center text-secondary mb-4">Sign Up in RE-Miner 2.0</h2>
             <Form onSubmit={handleSubmit}>
               <Form.Group controlId="name" className="mb-3">
                 <Form.Label>Name</Form.Label>
