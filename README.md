@@ -8,7 +8,7 @@ It provides an intuitive UI for users to interact with the RE-Miner 2.0 backend 
 
 The structure of **RE-Miner 2.0** is illustrated in the diagram below:
 
-![RE-Miner-2.0](src/assets/static/images/RE-Miner-2.0.png)
+![RE-Miner-2.0](src/assets/static/images/RE-Miner-2.0-internal-v2.png)
 
 
 💡 **Key Note:** While the dashboard enhances usability, it is **not strictly required**—users can interact directly with the backend via its API.
@@ -26,19 +26,16 @@ The structure of **RE-Miner 2.0** is illustrated in the diagram below:
 
 ## 📸 Screenshots & Demo
 
-Here are some visuals showcasing the RE-Miner Dashboard:
+Here are some visuals showcasing the RE-Miner Dashboard, all resized for a consistent aesthetic.
 
-### 🔹 Main Dashboard View
-![Dashboard Screenshot](screenshots/dashboard-screenshot.png)
-
-### 🔹 Review Analyzer
-![Single Review Analysis](screenshots/single-review-analysis.png)
-
-### 🔹 Batch Review Analytics (GIF Demo)
-![Batch Review GIF](screenshots/batch-review-demo.gif)
-
-### 🔹 Feature Clustering (GIF Demo)
-![Feature Clustering GIF](screenshots/batch-review-demo.gif)
+| **Feature** | **Screenshot/Demo** |
+|------------|---------------------|
+| **Main Dashboard View** | ![Dashboard Screenshot](src/assets/static/images/dashboard.png) |
+| **Review Searcher** | ![Review Search](src/assets/static/images/review_search.png) |
+| **Review Analyzer** | ![Review Analysis](src/assets/static/images/review_analyzer.png) |
+| **Tree Clustering Analyzer** | ![Tree Clustering](src/assets/static/images/tree_analyzer.png) |
+| **Batch Review Analytics (GIF Demo)** | ![Batch Review GIF](screenshots/batch-review-demo.gif) |
+| **Feature Clustering (GIF Demo)** | ![Feature Clustering GIF](screenshots/batch-review-demo.gif) |
 
 ### 🎥 Video Demo
 A full demo is available on [YouTube](https://www.youtube.com/watch?v=a11bHSCYqqM).
