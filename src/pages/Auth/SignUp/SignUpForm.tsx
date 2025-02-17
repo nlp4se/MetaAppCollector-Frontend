@@ -68,7 +68,7 @@ const SignUpForm = () => {
           </div>
         </Container>
 
-        <Container className="d-flex justify-content-center">
+        <Container className="d-flex flex-column align-items-center justify-content-center flex-grow-1">
           <Card className="shadow-lg p-4 rounded" style={{ width: "450px" }}>
             <h2 className="text-center text-secondary mb-4">Sign Up in RE-Miner 2.0</h2>
             <Form onSubmit={handleSubmit}>
