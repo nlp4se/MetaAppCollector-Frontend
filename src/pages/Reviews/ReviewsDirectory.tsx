@@ -41,6 +41,7 @@ const ReviewsDirectory: React.FC = () => {
     const { appPackage: stateAppPackage, selectedFeatures: stateSelectedFeatures } = location.state || {};
     const [noResultsShown, setNoResultsShown] = useState(false);
     const [loadingApps, setLoadingApps] = useState<boolean>(true); // Track loading state
+    const [loadingReviews, setLoadingReviews] = useState<boolean>(false);
 
     const polarityOptions = ["Positive", "Negative"];
     const topicOptions = [
@@ -66,7 +67,6 @@ const ReviewsDirectory: React.FC = () => {
         if (stateSelectedFeatures && stateSelectedFeatures.length > 0) setSelectedFeatures(stateSelectedFeatures);
     }, [stateAppPackage, stateSelectedFeatures]);
 
-
     useEffect(() => {
         const fetchApps = async () => {
             const appService = new AppService();
@@ -88,12 +88,16 @@ const ReviewsDirectory: React.FC = () => {
         fetchApps();
     }, [currentPage, searchTriggered]);
 
+    useEffect(() => {
+        fetchReviews(currentPage);
+    }, [currentPage]);
 
     const handleSearch = () => {
         setCurrentPage(0);
         setSearchTriggered(true);
-        fetchReviews(currentPage);
+        fetchReviews(0);
     };
+
 
 
     const handleCheckboxChange = async (review: ReviewManagerDTO) => {
@@ -123,7 +127,8 @@ const ReviewsDirectory: React.FC = () => {
         });
     }
 
-    const fetchReviews = async (page = currentPage) => {
+    const fetchReviews = async (page = 0) => {
+        setLoadingReviews(true); // Start loading
         try {
             const reviewService = new ReviewService();
             const response = await reviewService.fetchFilteredReviews(
@@ -137,26 +142,32 @@ const ReviewsDirectory: React.FC = () => {
                 pageSize
             );
 
-            if (response) {
+            if (response && response.reviews.length > 0) {
                 const { reviews: mappedData, total_pages: pages } = response;
+
+                if (page > pages) {
+                    setCurrentPage(1);
+                    fetchReviews(1);
+                    return;
+                }
+
                 setPageData(mappedData);
                 setTotalPages(pages);
-                setNoResultsShown(false);  // Reset when results are found
+                setNoResultsShown(false);
             } else {
                 setPageData([]);
-                if (!noResultsShown) {     // Show warning only once
-                    toast.warn("No reviews found for the selected filters.");
-                    setNoResultsShown(true);
-                }
+                setTotalPages(1);
+                setCurrentPage(1);
             }
         } catch (error) {
             setPageData([]);
-            if (!noResultsShown) {
-                toast.warn("No reviews found for the selected filters.");
-                setNoResultsShown(true);
-            }
+            setTotalPages(1);
+            setCurrentPage(1);
+        } finally {
+            setLoadingReviews(false); // Stop loading
         }
     };
+
     const handlePageSizeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const newSize = Number(event.target.value);
         setPageSize(newSize);
@@ -214,10 +225,9 @@ const ReviewsDirectory: React.FC = () => {
         }
     };
 
-    const prevPage = async () => {
-        if (currentPage > 1) {
-            const prevPageNumber = currentPage - 1;
-            setCurrentPage(prevPageNumber);
+    const prevPage = () => {
+        if (currentPage > 0) {
+            setCurrentPage((prevPage) => prevPage - 1);
         }
     };
 
