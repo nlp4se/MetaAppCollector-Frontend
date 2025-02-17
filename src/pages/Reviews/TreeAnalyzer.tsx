@@ -265,7 +265,7 @@ const TreeAnalyzer = () => {
     };
 
     return (
-        <Container>
+        <Container className="mb-5">
             <h1 className="text-secondary mb-4">Tree Analyzer</h1>
             {apps.length === 0 && (
                 <Alert variant="warning" className="mt-3 mb-4 d-flex align-items-center">

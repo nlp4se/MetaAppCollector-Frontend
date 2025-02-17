@@ -233,11 +233,11 @@ const ReviewsDirectory: React.FC = () => {
     };
 
     return (
-        <div>
+        <div className="mb-5">
             <h1 className="text-secondary">Reviews Directory</h1>
             {apps.length === 0 && (
                 <Alert variant="warning" className="mt-3 mb-4 d-flex align-items-center">
-                    No applications have been found. Please upload them using the:
+                    No applications have been found. Please upload them using the:Tre
                     <button
                         onClick={() => window.location.href = '/applications/upload'}
                         className="ms-2 btn btn-primary btn-sm"

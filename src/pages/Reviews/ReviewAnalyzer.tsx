@@ -306,7 +306,7 @@ const ReviewAnalyzer = () => {
 
 
             {data && (
-                <Row>
+                <Row className="mb-5">
                     <Col md={6}>
                         <div className="px-4 py-4 sentiment-histogram-container">
                             <Row>
