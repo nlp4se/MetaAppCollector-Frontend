@@ -62,7 +62,7 @@ const Dashboard = () => {
                 </Alert>
             )}
 
-            <Row className="gx-5">
+            <Row className="gx-5 mb-5">
                 <Col className="col-md-6 mb-4 ml-3">
                     <Row className="mb-4">
                         <DescriptorPolarAreaChart/>
