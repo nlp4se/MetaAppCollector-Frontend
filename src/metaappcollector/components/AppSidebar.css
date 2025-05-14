@@ -1,0 +1,71 @@
+.app-sidebar {
+  position: fixed;
+  top: 186px; /* deja espacio para la navbar si tienes una */
+  left: 0;
+  height: 100%;
+  width: 60px;
+  background-color: #f8f9fa;
+  transition: width 0.3s ease;
+  overflow-x: hidden;
+  padding-top: 1rem;
+  z-index: 1000;
+}
+
+.app-sidebar:hover {
+  width: 200px;
+}
+
+.app-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.app-item:hover {
+  background-color: #e9ecef;
+}
+
+.app-item.active {
+  background-color: #007bff;
+  color: white;
+}
+
+.app-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.app-name {
+  margin-left: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.app-sidebar:hover .app-name {
+  opacity: 1;
+}
+
+.new-app {
+  margin-top: auto;
+  border-top: 1px solid #dee2e6;
+}
+
+.new-app-icon {
+  background-color: #e2e6ea;
+  color: #007bff;
+  font-size: 20px;
+  font-weight: bold;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  min-width: 32px;
+}
+
+/* Asegura que el icono del + nunca se oculte */
+.app-icon {
+  flex-shrink: 0;
+}
