@@ -1,14 +1,16 @@
 .app-sidebar {
-  position: fixed;
+  position: sticky;
   top: 186px; /* deja espacio para la navbar si tienes una */
   left: 0;
   height: 100%;
   width: 60px;
   background-color: #f8f9fa;
   transition: width 0.3s ease;
+  margin-left: -250px;
   overflow-x: hidden;
   padding-top: 1rem;
   z-index: 1000;
+  border-right: 1px solid #ddd; /* Línea divisoria opcional */
 }
 
 .app-sidebar:hover {

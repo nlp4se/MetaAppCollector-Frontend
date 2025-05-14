@@ -15,6 +15,8 @@ import PrivateRoutes from './PrivateRoutes';
 import KGDirectory from '../pages/Apps/KGDirectory';
 import TreeAnalyzer from "../pages/Reviews/TreeAnalyzer";
 import MetaAppCollector from "../metaappcollector/pages/MetaAppCollector";
+import NewAppForm from "../metaappcollector/pages/NewAppForm";
+import AppDetail from "../metaappcollector/pages/AppDetail";
 
 interface LayoutProps {
     children: ReactNode;
@@ -43,8 +45,10 @@ const AuthenticatedRoutes: React.FC = () => {
                 <Route path="/reviews" element={<DefaultLayout><ReviewsDirectory /></DefaultLayout>} />
                 <Route path="applications/:appId/reviews/:reviewId/analyze" element={<DefaultLayout><ReviewAnalyzer /></DefaultLayout>} />
                 <Route path="/tree-analyzer" element={<DefaultLayout><TreeAnalyzer /></DefaultLayout>} />
-                <Route path="/meta-app-collector" element={<DefaultLayout><MetaAppCollector /></DefaultLayout>} />
-
+                <Route path="/meta-app-collector" element={<DefaultLayout><MetaAppCollector /></DefaultLayout>}>
+                    <Route path="apps/:id" element={<AppDetail />} />
+                    <Route path="apps/new" element={<NewAppForm />} />
+                </Route>
             </Route>
             <Route path="/sign-up" element={<SignUpForm />} />
             <Route path="/login" element={<LoginForm />} />
