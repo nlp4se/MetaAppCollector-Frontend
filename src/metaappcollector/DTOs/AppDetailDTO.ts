@@ -5,8 +5,10 @@ export interface AppDetailDTO {
   developer: string;
   releaseDate: string;
   pegi: string;
-  contentDescriptors: string[];
   sizeMB: number;
   availableOnAndroid: boolean;
   availableOnIos: boolean;
+  iconUrl: string;
+  appStoreId: string;
+  playStoreId: string;
 }

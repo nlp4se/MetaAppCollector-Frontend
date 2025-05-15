@@ -1,38 +1,30 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Row, Col, Button } from 'react-bootstrap';
 import { AppDetailDTO } from '../DTOs/AppDetailDTO';
-
-const mockDetails: Record<string, AppDetailDTO> = {
-  '1': {
-    id: '1',
-    name: 'Discord',
-    description: 'App para hablar con comunidades y jugar con amigos',
-    developer: 'Discord Inc.',
-    releaseDate: '2015-05-21',
-    pegi: '17+',
-    contentDescriptors: ['Fear', 'Language'],
-    sizeMB: 214.84,
-    availableOnAndroid: true,
-    availableOnIos: true,
-  },
-  '2': {
-    id: '2',
-    name: 'Instagram',
-    description: 'Comparte fotos y vídeos con tus amigos',
-    developer: 'Meta Platforms',
-    releaseDate: '2012-10-06',
-    pegi: '12+',
-    contentDescriptors: ['Mild Content'],
-    sizeMB: 135.6,
-    availableOnAndroid: true,
-    availableOnIos: true,
-  },
-};
+import AppService from '../services/AppService';
 
 const AppDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const app = mockDetails[id || ''];
+  const [app, setApp] = useState<AppDetailDTO | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const appService = new AppService();
+
+  useEffect(() => {
+    const fetchApp = async () => {
+      if (id) {
+        const fetchedApp = await appService.fetchAppById(id);
+        setApp(fetchedApp);
+      }
+      setIsLoading(false);
+    };
+
+    fetchApp();
+  }, [id]); // Fetch app details when the ID changes
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   if (!app) {
     return <div>App not found</div>;
@@ -44,11 +36,14 @@ const AppDetail: React.FC = () => {
         <div className="p-4">
           <h2>{app.name}</h2>
           <p>{app.description}</p>
+          <p><strong>App Store Id:</strong> {app.appStoreId}</p>
+          <p><strong>Play Store Id:</strong> {app.playStoreId}</p>
           <p><strong>Developer:</strong> {app.developer}</p>
           <p><strong>Release Date:</strong> {app.releaseDate}</p>
           <p><strong>PEGI:</strong> {app.pegi}</p>
-          <p><strong>Content Descriptors:</strong> {app.contentDescriptors.join(', ')}</p>
-          <p><strong>Size:</strong> {app.sizeMB} MB</p>
+          {app.sizeMB !== null && app.sizeMB !== undefined && (
+            <p><strong>Size:</strong> {app.sizeMB} MB</p>
+          )}
           <div>
             <strong>Available on:</strong>
             <ul>

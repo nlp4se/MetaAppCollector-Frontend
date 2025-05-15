@@ -1,24 +1,31 @@
 // src/pages/MetaAppDashboard.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Row, Col } from 'react-bootstrap';
 import AppSidebar from '../components/AppSidebar';
 import { Outlet } from 'react-router-dom';
 import { AppSummaryDTO } from '../DTOs/AppSummaryDTO';
-
-const mockApps: AppSummaryDTO[] = [
-  { id: '1', name: 'Discord', iconUrl: 'https://cdn.logo.com/hotlink-ok/logo-social.png' },
-  { id: '2', name: 'Instagram', iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png' },
-];
+import AppService from '../services/AppService';
 
 const MetaAppCollector: React.FC = () => {
+  const [apps, setApps] = useState<AppSummaryDTO[]>([]); // State to store apps
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
+  const appService = new AppService();
+
+  useEffect(() => {
+    const fetchApps = async () => {
+      const fetchedApps = await appService.fetchApps();
+      setApps(fetchedApps);
+    };
+
+    fetchApps();
+  }, []); // Fetch apps on component mount
 
   return (
     <Row style={{ height: '100vh' }}>
       <Col md={3}>
         <AppSidebar
-          apps={mockApps}
+          apps={apps} // Pass fetched apps to AppSidebar
           selectedAppId={selectedAppId}
           onSelectApp={setSelectedAppId}
         />
