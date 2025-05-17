@@ -1,22 +1,12 @@
 import React from 'react';
-import { AppSummaryDTO } from '../DTOs/AppSummaryDTO';
-//import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useApps } from '../contexts/AppsContext';
 import './AppSidebar.css';
 
-//const navigate = useNavigate();
-
-interface Props {
-  apps: AppSummaryDTO[];
-  selectedAppId: string | null;
-  onSelectApp: (appId: string) => void;
-}
-
-const AppSidebar: React.FC<Props> = ({ apps, selectedAppId, onSelectApp }) => {
-  const navigateTo = (url: string) => {
-    if (window.location.pathname !== url) {
-      window.location.href = url;
-    }
-  };
+const AppSidebar: React.FC = () => {
+  const { apps } = useApps();
+  const navigate = useNavigate();
+  const { id: selectedAppId } = useParams<{ id: string }>();
 
   return (
     <div className="app-sidebar">
@@ -25,16 +15,17 @@ const AppSidebar: React.FC<Props> = ({ apps, selectedAppId, onSelectApp }) => {
       {apps.map((app) => (
         <div
           key={app.id}
-          className={`app-item ${app.id === selectedAppId ? 'active' : ''}`}
-          onClick={() => navigateTo(`/meta-app-collector/apps/${app.id}`)}
+          className={`app-item ${String(app.id) === selectedAppId ? 'active' : ''}`}
+          onClick={() => navigate(`/meta-app-collector/apps/${app.id}`)}
         >
           <img src={app.iconUrl} alt={app.name} className="app-icon" />
           <span className="app-name">{app.name}</span>
         </div>
       ))}
+
       <div
         className="app-item new-app"
-        onClick={() => navigateTo('/meta-app-collector/apps/new')}
+        onClick={() => navigate('/meta-app-collector/apps/new')}
       >
         <div className="app-icon new-app-icon d-flex align-items-center justify-content-center">
           <strong>+</strong>

@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
 import { Form, Button, Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+
 import AppService from '../services/AppService';
 import { AppCreateDTO } from '../DTOs/AppCreateDTO';
+import { useApps } from '../contexts/AppsContext';
 
 const NewAppForm: React.FC = () => {
   const appService = new AppService();
+  const navigate = useNavigate();
+  const { refreshApps } = useApps();
+
   const [formErrors, setFormErrors] = useState<string[]>([]);
 
   const [formData, setFormData] = useState<AppCreateDTO>({
@@ -16,9 +21,9 @@ const NewAppForm: React.FC = () => {
     playstoreId: '',
   });
 
-  const navigate = useNavigate();
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -28,19 +33,16 @@ const NewAppForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Enviando formulario...');
 
     const result = await appService.createApp(formData);
 
-    if (result === null) {
-      setFormErrors(['Error inesperado al conectar con el servidor.']);
-      return;
-    }
-
-    if ('id' in result) {
+    if (result && 'id' in result) {
+      await refreshApps(); // Refresca el contexto con la nueva app
       navigate(`/meta-app-collector/apps/${result.id}`);
-    } else if ('errors' in result) {
+    } else if (result && 'errors' in result) {
       setFormErrors(result.errors);
+    } else {
+      setFormErrors(['Error inesperado.']);
     }
   };
 
@@ -49,6 +51,7 @@ const NewAppForm: React.FC = () => {
       <Col md={9} className="p-4">
         <div className="p-4">
           <h2>Create New App</h2>
+
           {formErrors.length > 0 && (
             <div className="alert alert-danger">
               <ul className="mb-0">
@@ -58,6 +61,7 @@ const NewAppForm: React.FC = () => {
               </ul>
             </div>
           )}
+
           <Form onSubmit={handleSubmit} className="mt-3">
             <Form.Group className="mb-3">
               <Form.Label>Code</Form.Label>
