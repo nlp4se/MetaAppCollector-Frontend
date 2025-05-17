@@ -5,14 +5,16 @@ import AppSidebar from '../components/AppSidebar';
 
 const MetaAppCollector: React.FC = () => {
   return (
-    <Row style={{ height: '100vh' }}>
-      <Col md={3}>
-        <AppSidebar />
-      </Col>
-      <Col md={9} className="p-4">
-        <Outlet />
-      </Col>
-    </Row>
+    <div className="min-vh-100 d-flex flex-column">
+      <Row className="flex-grow-1">
+        <Col md={3} className="bg-light">
+          <AppSidebar />
+        </Col>
+        <Col md={9} className="p-4">
+          <Outlet />
+        </Col>
+      </Row>
+    </div>
   );
 };
 

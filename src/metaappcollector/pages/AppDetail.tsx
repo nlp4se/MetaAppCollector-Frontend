@@ -67,6 +67,13 @@ const AppDetail: React.FC = () => {
             </ul>
           </div>
           <Button variant="danger" onClick={handleDelete}>Remove</Button>
+          <Button
+            variant="secondary"
+            onClick={() => navigate(`/meta-app-collector/apps/${id}/edit`)}
+            className="me-2"
+          >
+            Edit
+          </Button>
         </div>
       </Col>
     </Row>

@@ -32,6 +32,7 @@ class AppService {
             const app = await response.json();
             return {
             id: app.id,
+            code: app.code,
             name: app.name,
             description: app.description,
             developer: app.developer,
@@ -43,6 +44,7 @@ class AppService {
             iconUrl: app.icon_url || 'https://via.placeholder.com/150',
             appStoreId: app.appstore_id,
             playStoreId: app.playstore_id,
+            minIosVersion: app.min_ios_version,
             };
         } catch (error) {
             console.error('There was a problem with the fetch operation:', error);
@@ -77,20 +79,22 @@ class AppService {
     }
     }
 
-    async updateApp(appId: string, appData: AppDetailDTO): Promise<void> {
+    async updateApp(id: string, data: Partial<AppDetailDTO>): Promise<any> {
         try {
-            const response = await fetch(`${this.API_URL}apps/${appId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(appData),
-            });
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
+        const response = await fetch(`${this.API_URL}apps/${id}/`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            return { errors: errorData };
+        }
+
+        return await response.json();
         } catch (error) {
-            console.error('There was a problem with the fetch operation:', error);
+        return null;
         }
     }
 
