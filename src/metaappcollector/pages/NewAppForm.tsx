@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Form, Button, Row, Col } from 'react-bootstrap';
-
-const mockApps = [
-  { id: '1', name: 'Discord', iconUrl: 'https://cdn.logo.com/hotlink-ok/logo-social.png' },
-  { id: '2', name: 'Instagram', iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png' },
-];
+import { useNavigate } from 'react-router-dom';
+import AppService from '../services/AppService';
+import { AppCreateDTO } from '../DTOs/AppCreateDTO';
 
 const NewAppForm: React.FC = () => {
-  const [formData, setFormData] = useState({
+  const appService = new AppService();
+  const [formErrors, setFormErrors] = useState<string[]>([]);
+
+  const [formData, setFormData] = useState<AppCreateDTO>({
     code: '',
     name: '',
     description: '',
@@ -15,7 +16,7 @@ const NewAppForm: React.FC = () => {
     playstoreId: '',
   });
 
-  const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -25,10 +26,22 @@ const NewAppForm: React.FC = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('App creada:', formData);
-    // Aquí puedes llamar a un servicio para guardar la app
+    console.log('Enviando formulario...');
+
+    const result = await appService.createApp(formData);
+
+    if (result === null) {
+      setFormErrors(['Error inesperado al conectar con el servidor.']);
+      return;
+    }
+
+    if ('id' in result) {
+      navigate(`/meta-app-collector/apps/${result.id}`);
+    } else if ('errors' in result) {
+      setFormErrors(result.errors);
+    }
   };
 
   return (
@@ -36,6 +49,15 @@ const NewAppForm: React.FC = () => {
       <Col md={9} className="p-4">
         <div className="p-4">
           <h2>Create New App</h2>
+          {formErrors.length > 0 && (
+            <div className="alert alert-danger">
+              <ul className="mb-0">
+                {formErrors.map((err, i) => (
+                  <li key={i}>{err}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           <Form onSubmit={handleSubmit} className="mt-3">
             <Form.Group className="mb-3">
               <Form.Label>Code</Form.Label>

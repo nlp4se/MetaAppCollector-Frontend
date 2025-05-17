@@ -3,14 +3,30 @@ import { useParams } from 'react-router-dom';
 import { Row, Col, Button } from 'react-bootstrap';
 import { AppDetailDTO } from '../DTOs/AppDetailDTO';
 import AppService from '../services/AppService';
+import { useNavigate } from 'react-router-dom';
 
 const AppDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [app, setApp] = useState<AppDetailDTO | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const appService = new AppService();
+  const navigate = useNavigate();
 
-  useEffect(() => {
+  const handleDelete = async () => {
+    if (!id) return;
+
+    const confirmed = window.confirm(`Are you sure you want to delete "${app?.name}"?`);
+    if (!confirmed) return;
+
+    const success = await appService.deleteApp(id);
+
+    if (success) {
+      navigate('/meta-app-collector');
+    } else {
+      alert('Error deleting the app.');
+    }
+  };
+    useEffect(() => {
     const fetchApp = async () => {
       if (id) {
         const fetchedApp = await appService.fetchAppById(id);
@@ -51,7 +67,7 @@ const AppDetail: React.FC = () => {
               {app.availableOnIos && <li>iOS</li>}
             </ul>
           </div>
-          <Button variant="danger">Remove</Button>
+          <Button variant="danger" onClick={handleDelete}>Remove</Button>
         </div>
       </Col>
     </Row>
