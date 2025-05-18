@@ -3,7 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Row, Col, Button, Image } from 'react-bootstrap';
 import { AppDetailDTO } from '../DTOs/AppDetailDTO';
 import AppService from '../services/AppService';
+import MetricService from '../services/MetricService';
 import { useApps } from '../contexts/AppsContext';
+import { MetricSummaryDTO } from '../DTOs/MetricSummaryDTO';
+import MetricDashboard from '../components/MetricDashboard';
 
 const AppDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -11,18 +14,25 @@ const AppDetail: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const appService = new AppService();
+  const metricService = new MetricService();
   const { removeAppFromList } = useApps();
+  const [metrics, setMetrics] = useState<MetricSummaryDTO[]>([]);
 
   useEffect(() => {
-    const fetchApp = async () => {
-      if (id) {
-        const fetchedApp = await appService.fetchAppById(id);
-        setApp(fetchedApp);
-      }
+    const fetchData = async () => {
+      if (!id) return;
+
+      const [fetchedApp, fetchedMetrics] = await Promise.all([
+        appService.fetchAppById(id),
+        metricService.fetchMetrics(),
+      ]);
+
+      setApp(fetchedApp);
+      setMetrics(fetchedMetrics);
       setIsLoading(false);
     };
 
-    fetchApp();
+    fetchData();
   }, [id]);
 
   const handleDelete = async () => {
@@ -86,6 +96,12 @@ const AppDetail: React.FC = () => {
             </Button>
           </div>
         </div>
+        {metrics.map((metric) => (
+          <div key={metric.id} className="my-5">
+            <h4>{metric.name}</h4>
+            <MetricDashboard appId={id!} metricId={metric.id.toString()} />
+          </div>
+        ))}
       </Col>
     </Row>
   );
