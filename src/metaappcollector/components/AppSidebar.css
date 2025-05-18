@@ -15,6 +15,13 @@
   width: 200px;
 }
 
+.sidebar-title {
+  text-align: center;
+  padding: 10px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
 .app-item {
   display: flex;
   align-items: center;
@@ -36,6 +43,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .app-name {
@@ -63,13 +71,7 @@
   height: 32px;
   border-radius: 50%;
   min-width: 32px;
-}
-
-/* Asegura que el icono del + nunca se oculte */
-.app-icon {
-  flex-shrink: 0;
-}
-
-.sidebar-title {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
