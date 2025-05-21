@@ -22,15 +22,24 @@ interface LayoutProps {
     children: ReactNode;
 }
 
-const DefaultLayout: React.FC<LayoutProps> = ({ children }) => (
+import { useLocation } from 'react-router-dom';
+
+const DefaultLayout: React.FC<LayoutProps> = ({ children }) => {
+  const location = useLocation();
+  const isMetaAppCollector = location.pathname.startsWith('/meta-app-collector');
+
+  return (
     <div className="d-flex flex-column min-vh-100">
-        <Navbar />
-        <Container className="py-4 flex-fill">
-            {children}
-        </Container>
-        <Footer />
+      <Navbar />
+      {isMetaAppCollector ? (
+        <div className="">{children}</div>
+      ) : (
+        <Container className="py-4 flex-fill">{children}</Container>
+      )}
+      <Footer />
     </div>
-);
+  );
+};
 
 
 const AuthenticatedRoutes: React.FC = () => {

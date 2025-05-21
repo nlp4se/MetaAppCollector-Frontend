@@ -56,7 +56,7 @@ const AppDetail: React.FC = () => {
   if (!app) return <div>App not found</div>;
 
   return (
-    <Row style={{ height: '100vh' }}>
+    <Row className="min-vh-100">
       <Col md={9} className="p-4">
         <div className="p-4">
           <div className="text-center mb-4">

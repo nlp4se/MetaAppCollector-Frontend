@@ -2,7 +2,14 @@ import React, { useEffect, useState } from 'react';
 import MetricService from '../services/MetricService';
 import { MetricDashboardDTO } from '../DTOs/MetricDashboardDTO';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
 } from 'recharts';
 import { Card, ButtonGroup, ToggleButton } from 'react-bootstrap';
 
@@ -14,7 +21,8 @@ interface MetricDashboardProps {
 const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) => {
   const [metricData, setMetricData] = useState<MetricDashboardDTO | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [period, setPeriod] = useState<'1d' | '7d' | '30d' | '90d' | '1y'>('30d');
+  const [period, setPeriod] = useState<'1d' | '7d' | '30d' | '90d' | '1y'>('7d');
+  const [visibleSources, setVisibleSources] = useState<Record<string, boolean>>({});
   const decimals = 4;
 
   useEffect(() => {
@@ -23,6 +31,13 @@ const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) =>
         const service = new MetricService();
         const result = await service.fetchMetricDashboard(appId, metricId);
         setMetricData(result);
+
+        // Inicializa visibilidad: todos visibles
+        const visibility: Record<string, boolean> = {};
+        if (result) {
+          result.sources.forEach((s) => (visibility[s.source] = true));
+        }
+        setVisibleSources(visibility);
       }
       setIsLoading(false);
     };
@@ -30,7 +45,6 @@ const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) =>
     fetchData();
   }, [appId, metricId]);
 
-  // 🔧 Agrupa y filtra por período
   const filterHistoryByPeriod = (
     history: { date: string; value: number }[],
     period: '1d' | '7d' | '30d' | '90d' | '1y'
@@ -40,6 +54,25 @@ const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) =>
     const daysMap = { '1d': 1, '7d': 7, '30d': 30, '90d': 90, '1y': 365 };
     fromDate.setDate(now.getDate() - daysMap[period]);
     return history.filter(({ date }) => new Date(date) >= fromDate);
+  };
+
+  const fillMissingDates = (
+    allHistories: Record<string, { date: string; value: number }[]>
+  ) => {
+    const allDates = new Set<string>();
+    Object.values(allHistories).forEach((hist) =>
+      hist.forEach((entry) => allDates.add(entry.date))
+    );
+    const sortedDates = Array.from(allDates).sort();
+
+    return sortedDates.map((date) => {
+      const entry: any = { date };
+      for (const [source, hist] of Object.entries(allHistories)) {
+        const point = hist.find((h) => h.date === date);
+        entry[source] = point ? point.value : null;
+      }
+      return entry;
+    });
   };
 
   const periodOptions = [
@@ -52,6 +85,52 @@ const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) =>
 
   if (isLoading) return <div>Loading...</div>;
   if (!metricData) return <div>No data available</div>;
+
+  // Prepara los datos combinados por fecha
+  const allHistories: Record<string, { date: string; value: number }[]> = {};
+  metricData.sources.forEach((source) => {
+    const grouped: Record<string, number[]> = {};
+
+    source.history.forEach(({ date, value }) => {
+      const day = new Date(date).toISOString().split('T')[0];
+      const numValue = typeof value === 'number' ? value : parseFloat(String(value));
+      if (!grouped[day]) grouped[day] = [];
+      grouped[day].push(numValue);
+    });
+
+    const averaged = Object.entries(grouped).map(([date, values]) => ({
+      date,
+      value: values.reduce((a, b) => a + b, 0) / values.length,
+    }));
+
+    allHistories[source.source] = filterHistoryByPeriod(averaged, period);
+  });
+
+  const chartData = fillMissingDates(allHistories);
+  const colors = ['#4a90e2', '#f39c12', '#2ecc71', '#e74c3c', '#9b59b6', '#1abc9c'];
+
+  const renderCustomLegend = () => {
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', paddingLeft: '10px', paddingBottom: '10px' }}>
+      {metricData?.sources.map((source, index) => (
+        <label key={source.source} style={{ cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={visibleSources[source.source]}
+            onChange={() =>
+              setVisibleSources((prev) => ({
+                ...prev,
+                [source.source]: !prev[source.source],
+              }))
+            }
+            style={{ marginRight: '5px' }}
+          />
+          <span style={{ color: colors[index % colors.length] }}>{source.source}</span>
+        </label>
+      ))}
+    </div>
+  );
+};
 
   return (
     <div className="p-4">
@@ -79,45 +158,56 @@ const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) =>
         </ButtonGroup>
       </div>
 
-      {metricData.sources.map((source) => {
-        const filteredHistory = filterHistoryByPeriod(source.history, period);
+      <Card className="my-4 p-3 shadow-sm">
+        <h5>Sources</h5>
 
-        return (
-          <Card key={source.source} className="my-4 p-3 shadow-sm">
-            <h5>{source.source}</h5>
-            {filteredHistory.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={filteredHistory}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis
-                    domain={['dataMin - 0.1', 'dataMax + 0.1']}
-                    allowDecimals={true}
-                    tickCount={5}
-                    tickFormatter={(value) => value.toFixed(decimals)}
-                  />
-                  <Tooltip
-                    formatter={(value: any) => parseFloat(value).toFixed(decimals)}
-                    labelFormatter={(label: string) => `Fecha: ${label}`}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#4a90e2"
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                    activeDot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-muted">No hay datos en este período.</p>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis
+              dataKey="date"
+              tickFormatter={(dateStr) =>
+                new Date(dateStr).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                })
+              }
+              angle={-45}
+              textAnchor="end"
+              height={60}
+            />
+            <YAxis
+              domain={['dataMin - 0.1', 'dataMax + 0.1']}
+              allowDecimals={true}
+              tickCount={5}
+              tickFormatter={(value) => value.toFixed(decimals)}
+            />
+            <Tooltip
+              formatter={(value: any) => parseFloat(value).toFixed(decimals)}
+              labelFormatter={(label: string) => `Fecha: ${label}`}
+            />
+            <Legend content={renderCustomLegend} />
+            {metricData.sources.map((source, index) =>
+              visibleSources[source.source] ? (
+                <Line
+                  key={source.source}
+                  type="monotone"
+                  dataKey={source.source}
+                  stroke={colors[index % colors.length]}
+                  strokeWidth={2}
+                  dot={{ r: 5 }}
+                  activeDot={{ r: 7 }}
+                  connectNulls
+                  isAnimationActive={false}
+                />
+              ) : null
             )}
-          </Card>
-        );
-      })}
+          </LineChart>
+        </ResponsiveContainer>
+      </Card>
     </div>
   );
 };
 
 export default MetricDashboard;
+
