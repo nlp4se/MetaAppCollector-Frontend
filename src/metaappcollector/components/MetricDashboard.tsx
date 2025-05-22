@@ -57,23 +57,38 @@ const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) =>
   };
 
   const fillMissingDates = (
-    allHistories: Record<string, { date: string; value: number }[]>
-  ) => {
-    const allDates = new Set<string>();
-    Object.values(allHistories).forEach((hist) =>
-      hist.forEach((entry) => allDates.add(entry.date))
-    );
-    const sortedDates = Array.from(allDates).sort();
+  allHistories: Record<string, { date: string; value: number }[]>
+) => {
+  const allDates = new Set<string>();
+  Object.values(allHistories).forEach((hist) =>
+    hist.forEach((entry) => allDates.add(entry.date))
+  );
 
-    return sortedDates.map((date) => {
-      const entry: any = { date };
-      for (const [source, hist] of Object.entries(allHistories)) {
-        const point = hist.find((h) => h.date === date);
-        entry[source] = point ? point.value : null;
-      }
-      return entry;
-    });
-  };
+  const sortedDates = Array.from(allDates).sort();
+
+  if (sortedDates.length === 0) return [];
+
+  // 🆕 Añadimos días vacíos hasta hoy (si falta)
+  const startDate = new Date(sortedDates[0]);
+  const endDate = new Date(); // hoy
+  console.log('startDate', startDate);
+  endDate.setHours(0, 0, 0, 0);
+  endDate.setDate(endDate.getDate() + 1);
+  const allDateStrings: string[] = [];
+  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+    allDateStrings.push(d.toISOString().split('T')[0]);
+  }
+
+  return allDateStrings.map((date) => {
+    const entry: any = { date };
+    for (const [source, hist] of Object.entries(allHistories)) {
+      const point = hist.find((h) => h.date === date);
+      entry[source] = point ? point.value : null;
+    }
+    return entry;
+  });
+};
+
 
   const periodOptions = [
     { value: '1d', label: 'Day' },
@@ -180,9 +195,23 @@ const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) =>
               domain={['dataMin - 0.1', 'dataMax + 0.1']}
               allowDecimals={true}
               tickCount={5}
-              tickFormatter={(value) => value.toFixed(decimals)}
+              tickFormatter={(value) => (Math.round(value * 10) / 10).toFixed(1)}
             />
-            <Tooltip
+            {/*<YAxis
+              domain={([dataMin, dataMax]: [number, number]) => {
+                const min = Math.floor(dataMin * 10) / 10;
+                const max = Math.ceil(dataMax * 10) / 10;
+                return [min, max];
+              }}
+              ticks={Array.from({ length: 5 }, (_, i) => {
+                const min = Math.floor(metricData!.sources.flatMap(s =>
+                  s.history.map(p => typeof p.value === 'number' ? p.value : parseFloat(String(p.value))
+                )).reduce((a, b) => Math.min(a, b)) * 10) / 10;
+                return parseFloat((min + i * 0.1).toFixed(1));
+              })}
+              tickFormatter={(value) => value.toFixed(1)}
+            />*/}
+            <Tooltip  
               formatter={(value: any) => parseFloat(value).toFixed(decimals)}
               labelFormatter={(label: string) => `Fecha: ${label}`}
             />
