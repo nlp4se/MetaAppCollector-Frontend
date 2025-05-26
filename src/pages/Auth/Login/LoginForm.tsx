@@ -11,33 +11,54 @@ const LoginForm = () => {
         email: '',
         password: '',
     });
+    const [backend, setBackend] = useState<'metaapp' | 'reminer'>('reminer');
 
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
     const navigate = useNavigate();
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+    const handleChange = (e: React.ChangeEvent<any>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
     };
+
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         try {
-            const formDataToSend = new FormData();
-            formDataToSend.append('email', formData.email);
-            formDataToSend.append('password', formData.password);
+            const payload = {
+                username: formData.email, // o email, segons backend
+                password: formData.password,
+            };
 
-            const response = await fetch('http://localhost:3001/api/v1/login', {
+            let loginUrl = '';
+            if (backend === 'reminer') {
+                loginUrl = 'http://localhost:3001/api/v1/login'; // REMINER endpoint
+            } else {
+                loginUrl = 'http://127.0.0.1:8000/api/users/token/'; // METAAPP JWT endpoint
+            }
+
+            const response = await fetch(loginUrl, {
                 method: 'POST',
-                body: formDataToSend
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
             });
 
             if (response.ok) {
                 const responseBody = await response.json();
-                localStorage.setItem('USER_ID', responseBody.user_data.id);
-                localStorage.setItem('ACCESS_TOKEN', responseBody.access_token);
-                localStorage.setItem('REFRESH_TOKEN', responseBody.refresh_token);
-                navigate('/dashboard');
+                localStorage.setItem('ACTIVE_BACKEND', backend);
+
+                if (backend === 'reminer') {
+                    localStorage.setItem('REMINER_ACCESS_TOKEN', responseBody.access_token);
+                    localStorage.setItem('REMINER_REFRESH_TOKEN', responseBody.refresh_token);
+                    localStorage.setItem('USER_ID', responseBody.user_data.id);
+                    navigate('/dashboard');
+                } else {
+                    localStorage.setItem('METAAPP_ACCESS_TOKEN', responseBody.access);
+                    localStorage.setItem('METAAPP_REFRESH_TOKEN', responseBody.refresh);
+                    navigate('/meta-app-collector');
+                }
             } else {
                 const errorData = await response.json();
                 setToastMessage(errorData.message || "Login failed. Please try again.");
@@ -59,20 +80,27 @@ const LoginForm = () => {
                 </div>
             </Container>
 
-            {/* Form Section (Fixed Layout to Match SignUpForm) */}
             <Container className="d-flex flex-column align-items-center justify-content-center flex-grow-1">
                 <Card className="shadow-lg p-4 rounded" style={{ width: "450px" }}>
-                    <h2 className="text-center text-secondary mb-4">Login to RE-Miner 2.0</h2>
+                    <h2 className="text-center text-secondary mb-4">Login</h2>
+
                     <Form onSubmit={handleSubmit}>
+                        <Form.Group controlId="backend" className="mb-3">
+                            <Form.Label className="fw-semibold">Backend</Form.Label>
+                            <Form.Select name="backend" value={backend} onChange={(e) => setBackend(e.target.value as 'metaapp' | 'reminer')}>
+                                <option value="reminer">REMINER</option>
+                                <option value="metaapp">MetaAppCollector</option>
+                            </Form.Select>
+                        </Form.Group>
+
                         <Form.Group controlId="email" className="mb-3">
-                            <Form.Label className="fw-semibold">Email Address</Form.Label>
+                            <Form.Label className="fw-semibold">Email / Username</Form.Label>
                             <Form.Control
-                                type="email"
+                                type="text"
                                 name="email"
                                 value={formData.email}
                                 onChange={handleChange}
-                                placeholder="Enter your email"
-                                style={{ padding: '10px', fontSize: '1rem' }}
+                                placeholder="Enter your email or username"
                                 required
                             />
                         </Form.Group>
@@ -85,7 +113,6 @@ const LoginForm = () => {
                                 value={formData.password}
                                 onChange={handleChange}
                                 placeholder="Enter your password"
-                                style={{ padding: '10px', fontSize: '1rem' }}
                                 required
                             />
                         </Form.Group>
@@ -106,7 +133,6 @@ const LoginForm = () => {
                 </Card>
             </Container>
 
-            {/* Toast Notification (Same as SignUpForm) */}
             <ToastContainer className="position-fixed top-0 end-0 p-3" style={{ zIndex: 1050 }}>
                 <Toast show={showToast} bg="danger" autohide delay={3000} onClose={() => setShowToast(false)}>
                     <Toast.Header>
@@ -116,7 +142,6 @@ const LoginForm = () => {
                 </Toast>
             </ToastContainer>
 
-            {/* Footer (Now Matches SignUpForm) */}
             <div className="mt-5">
                 <Footer />
             </div>

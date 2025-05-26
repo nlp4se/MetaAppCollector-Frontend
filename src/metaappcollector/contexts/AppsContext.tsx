@@ -34,6 +34,7 @@ export const AppsProvider: React.FC<AppsProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
+    console.log("🔁 AppsProvider muntat → refreshApps()");
     refreshApps();
   }, []);
 

@@ -8,32 +8,40 @@ const DropdownMenuUser = () => {
 
     const handleSignOut = async (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault();
+        const activeBackend = localStorage.getItem('ACTIVE_BACKEND');
+
         try {
-            const accessToken = localStorage.getItem('ACCESS_TOKEN');
-            if (!accessToken) {
-                throw new Error('Access token not found');
-            }
+            if (activeBackend === 'reminer') {
+            const accessToken = localStorage.getItem('REMINER_ACCESS_TOKEN');
+            if (!accessToken) throw new Error('Access token not found');
 
             const response = await fetch('http://localhost:3001/api/v1/logout', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json'
-                }
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+                },
             });
 
-            if (response.ok) {
-                localStorage.removeItem('USER_ID');
-                localStorage.removeItem('ACCESS_TOKEN');
-                localStorage.removeItem('REFRESH_TOKEN');
-                navigate('/login');
-            } else {
+            if (!response.ok) {
                 console.error('Logout failed:', response.statusText);
             }
+
+            localStorage.removeItem('REMINER_ACCESS_TOKEN');
+            localStorage.removeItem('REMINER_REFRESH_TOKEN');
+            } else if (activeBackend === 'metaapp') {
+            localStorage.removeItem('METAAPP_ACCESS_TOKEN');
+            localStorage.removeItem('METAAPP_REFRESH_TOKEN');
+            }
+
+            localStorage.removeItem('USER_ID');
+            localStorage.removeItem('ACTIVE_BACKEND');
+            navigate('/login');
         } catch (error: any) {
             console.error('Logout failed:', error.message);
         }
-    };
+        };
+
 
     return (
         <Dropdown.Menu>
@@ -64,8 +72,8 @@ const PrimaryNavBar = () => {
         const fetchUserData = async () => {
             try {
                 const userId = localStorage.getItem('USER_ID');
-                const accessToken = localStorage.getItem('ACCESS_TOKEN');
-                const refreshToken = localStorage.getItem('REFRESH_TOKEN');
+                const accessToken = localStorage.getItem('REMINER_ACCESS_TOKEN');
+                const refreshToken = localStorage.getItem('REMINER_REFRESH_TOKEN');
                 if (!userId || !accessToken || !refreshToken) {
                     throw new Error('User ID, access token, or refresh token not found in local storage');
                 }

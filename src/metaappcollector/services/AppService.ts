@@ -5,9 +5,21 @@ import { AppCreateDTO } from '../DTOs/AppCreateDTO';
 class AppService {
     API_URL = 'http://127.0.0.1:8000/api/'; 
 
+    private getAuthHeaders(): HeadersInit {
+        const token = localStorage.getItem('METAAPP_ACCESS_TOKEN');
+        return token
+            ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+            : { 'Content-Type': 'application/json' };
+    }
+
     async fetchApps(): Promise<AppSummaryDTO[]> {
         try {
-            const response = await fetch(`${this.API_URL}apps`);
+            console.log('Fetching apps from:', `${this.API_URL}apps/`);
+            console.log('Auth Headers:', this.getAuthHeaders());
+            const response = await fetch(`${this.API_URL}apps/`, {
+                headers: this.getAuthHeaders()
+            });
+
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
@@ -25,7 +37,10 @@ class AppService {
 
     async fetchAppById(appId: string): Promise<AppDetailDTO | null> {
         try {
-            const response = await fetch(`${this.API_URL}apps/${appId}`);
+            const response = await fetch(`${this.API_URL}apps/${appId}/`, {
+                headers: this.getAuthHeaders()
+            });
+
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
@@ -56,7 +71,7 @@ class AppService {
       try {
         const response = await fetch(`${this.API_URL}apps/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getAuthHeaders(),
         body: JSON.stringify({
             code: appData.code,
             name: appData.name,
@@ -83,7 +98,7 @@ class AppService {
         try {
         const response = await fetch(`${this.API_URL}apps/${id}/`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: this.getAuthHeaders(),
             body: JSON.stringify(data),
         });
 
@@ -102,6 +117,7 @@ class AppService {
         try {
             const response = await fetch(`${this.API_URL}apps/${appId}/`, {
             method: 'DELETE',
+            headers: this.getAuthHeaders(),
             });
 
             return response.ok;
