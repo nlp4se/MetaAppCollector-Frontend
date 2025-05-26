@@ -1,13 +1,26 @@
 import { AppSummaryDTO } from '../DTOs/AppSummaryDTO';
 import { AppDetailDTO } from '../DTOs/AppDetailDTO';
 import { AppCreateDTO } from '../DTOs/AppCreateDTO';
+import { METAAPP_API_URL } from '../../config';
+import { authFetch } from './api/authFetch';
 
 class AppService {
-    API_URL = 'http://127.0.0.1:8000/api/'; 
+
+    private getAuthHeaders(): HeadersInit {
+        const token = localStorage.getItem('METAAPP_ACCESS_TOKEN');
+        return token
+            ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+            : { 'Content-Type': 'application/json' };
+    }
 
     async fetchApps(): Promise<AppSummaryDTO[]> {
         try {
-            const response = await fetch(`${this.API_URL}apps`);
+            console.log('Fetching apps from:', `${METAAPP_API_URL}apps/`);
+            console.log('Auth Headers:', this.getAuthHeaders());
+            const response = await authFetch(`${METAAPP_API_URL}apps/`, {
+                headers: this.getAuthHeaders()
+            });
+
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
@@ -18,14 +31,17 @@ class AppService {
             iconUrl: app.icon_url || 'https://via.placeholder.com/150',
             }));
         } catch (error) {
-            console.error('There was a problem with the fetch operation:', error);
+            console.error('There was a problem with the authFetch operation:', error);
             return [];
         }
     }
 
     async fetchAppById(appId: string): Promise<AppDetailDTO | null> {
         try {
-            const response = await fetch(`${this.API_URL}apps/${appId}`);
+            const response = await authFetch(`${METAAPP_API_URL}apps/${appId}/`, {
+                headers: this.getAuthHeaders()
+            });
+
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
@@ -47,16 +63,16 @@ class AppService {
             minIosVersion: app.min_ios_version,
             };
         } catch (error) {
-            console.error('There was a problem with the fetch operation:', error);
+            console.error('There was a problem with the authFetch operation:', error);
             return null;
         }
     }
 
     async createApp(appData: AppCreateDTO): Promise<{ id: string } | { errors: string[] } | null> {
       try {
-        const response = await fetch(`${this.API_URL}apps/`, {
+        const response = await authFetch(`${METAAPP_API_URL}apps/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getAuthHeaders(),
         body: JSON.stringify({
             code: appData.code,
             name: appData.name,
@@ -74,21 +90,22 @@ class AppService {
 
         return { id: data.id };
     } catch (error) {
-        console.error('Error al hacer fetch:', error);
+        console.error('Error al hacer authFetch:', error);
         return null;
     }
     }
 
     async updateApp(id: string, data: Partial<AppDetailDTO>): Promise<any> {
         try {
-        const response = await fetch(`${this.API_URL}apps/${id}/`, {
+        const response = await authFetch(`${METAAPP_API_URL}apps/${id}/`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: this.getAuthHeaders(),
             body: JSON.stringify(data),
         });
 
         if (!response.ok) {
             const errorData = await response.json();
+            console.error("❌ Error del servidor:", errorData);
             return { errors: errorData };
         }
 
@@ -100,8 +117,9 @@ class AppService {
 
     async deleteApp(appId: string): Promise<boolean> {
         try {
-            const response = await fetch(`${this.API_URL}apps/${appId}/`, {
+            const response = await authFetch(`${METAAPP_API_URL}apps/${appId}/`, {
             method: 'DELETE',
+            headers: this.getAuthHeaders(),
             });
 
             return response.ok;

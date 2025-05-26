@@ -1,5 +1,5 @@
-const config = {
-    API_URL: process.env.REACT_APP_API_URL,
-};
+const isDev = window.location.hostname === 'localhost';
 
-export default config;
+export const METAAPP_API_URL = isDev
+  ? 'http://127.0.0.1:8000/api/'
+  : 'https://metaapp.tudomini.com/api/';

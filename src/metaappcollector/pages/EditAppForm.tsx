@@ -48,7 +48,7 @@ const EditAppForm: React.FC = () => {
   if (!formData) return <div>Loading...</div>;
 
   return (
-    <Row style={{ height: '100vh' }}>
+    <Row style={{ minHeight: '100%' }}>
       <Col md={9} className="p-4">
         <h2>Edit App</h2>
         {formErrors.length > 0 && (
@@ -196,7 +196,7 @@ const EditAppForm: React.FC = () => {
             />
         </Form.Group>
 
-        <Button type="submit" variant="primary">Save Changes</Button>
+        <Button type="submit" variant="primary" className="mb-4">Save Changes</Button>
         </Form>
       </Col>
     </Row>
