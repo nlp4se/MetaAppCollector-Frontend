@@ -12,6 +12,7 @@ import {
   Legend,
 } from 'recharts';
 import { Card, ButtonGroup, ToggleButton } from 'react-bootstrap';
+import { useMetricPeriod } from '../contexts/MetricDashboardContext';
 
 interface MetricDashboardProps {
   appId: string;
@@ -21,29 +22,28 @@ interface MetricDashboardProps {
 const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) => {
   const [metricData, setMetricData] = useState<MetricDashboardDTO | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [period, setPeriod] = useState<'1d' | '7d' | '30d' | '90d' | '1y'>('7d');
+  const { period } = useMetricPeriod();
   const [visibleSources, setVisibleSources] = useState<Record<string, boolean>>({});
   const decimals = 4;
-
+  
   useEffect(() => {
-    const fetchData = async () => {
-      if (appId && metricId) {
-        const service = new MetricService();
-        const result = await service.fetchMetricDashboard(appId, metricId);
-        setMetricData(result);
-
-        // Inicializa visibilidad: todos visibles
-        const visibility: Record<string, boolean> = {};
-        if (result) {
-          result.sources.forEach((s) => (visibility[s.source] = true));
+      const fetchData = async () => {
+        if (appId && metricId) {
+          const service = new  MetricService();
+          const result = await service.fetchMetricDashboard(appId, metricId);
+          setMetricData(result);
+  
+          const visibility: Record<string, boolean> = {};
+          if (result) {
+            result.sources.forEach((s) => (visibility[s.source] = true));
+          }
+          setVisibleSources(visibility);
         }
-        setVisibleSources(visibility);
-      }
-      setIsLoading(false);
-    };
-
-    fetchData();
-  }, [appId, metricId]);
+        setIsLoading(false);
+      };
+  
+      fetchData();
+    }, [appId, metricId]);
 
   const filterHistoryByPeriod = (
     history: { date: string; value: number }[],
@@ -89,41 +89,39 @@ const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) =>
   });
 };
 
-
-  const periodOptions = [
-    { value: '1d', label: 'Day' },
-    { value: '7d', label: 'Week' },
-    { value: '30d', label: 'Month' },
-    { value: '90d', label: '3 Months' },
-    { value: '1y', label: 'Year' },
-  ];
-
   if (isLoading) return <div>Loading...</div>;
   if (!metricData) return <div>No data available</div>;
 
   // Prepara los datos combinados por fecha
-  const allHistories: Record<string, { date: string; value: number }[]> = {};
-  metricData.sources.forEach((source) => {
-    const grouped: Record<string, number[]> = {};
+  const computeChartData = () => {
+    if (!metricData) return [];
 
-    source.history.forEach(({ date, value }) => {
-      const day = new Date(date).toISOString().split('T')[0];
-      const numValue = typeof value === 'number' ? value : parseFloat(String(value));
-      if (!grouped[day]) grouped[day] = [];
-      grouped[day].push(numValue);
+    const allHistories: Record<string, { date: string; value: number }[]> = {};
+
+    metricData.sources.forEach((source) => {
+      const grouped: Record<string, number[]> = {};
+
+      source.history.forEach(({ date, value }) => {
+        const day = new Date(date).toISOString().split('T')[0];
+        const numValue = typeof value === 'number' ? value : parseFloat(String(value));
+        if (!grouped[day]) grouped[day] = [];
+        grouped[day].push(numValue);
+      });
+
+      const averaged = Object.entries(grouped).map(([date, values]) => ({
+        date,
+        value: values.reduce((a, b) => a + b, 0) / values.length,
+      }));
+
+      allHistories[source.source] = filterHistoryByPeriod(averaged, period);
     });
 
-    const averaged = Object.entries(grouped).map(([date, values]) => ({
-      date,
-      value: values.reduce((a, b) => a + b, 0) / values.length,
-    }));
+    return fillMissingDates(allHistories);
+  };
 
-    allHistories[source.source] = filterHistoryByPeriod(averaged, period);
-  });
-
-  const chartData = fillMissingDates(allHistories);
+  const chartData = computeChartData();
   const colors = ['#4a90e2', '#f39c12', '#2ecc71', '#e74c3c', '#9b59b6', '#1abc9c'];
-
+  const isInteger = metricData.metric.value_type === 'integer';
   const renderCustomLegend = () => {
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', paddingLeft: '10px', paddingBottom: '10px' }}>
@@ -154,28 +152,9 @@ const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) =>
           <h2>{metricData.metric.name}</h2>
           <p>{metricData.metric.description}</p>
         </div>
-        <ButtonGroup>
-          {periodOptions.map((opt) => (
-            <ToggleButton
-              key={opt.value}
-              id={`period-${opt.value}`}
-              type="radio"
-              variant="outline-primary"
-              name="period"
-              value={opt.value}
-              checked={period === opt.value}
-              onChange={(e) => setPeriod(e.currentTarget.value as any)}
-              size="sm"
-            >
-              {opt.label}
-            </ToggleButton>
-          ))}
-        </ButtonGroup>
       </div>
 
       <Card className="my-4 p-3 shadow-sm">
-        <h5>Sources</h5>
-
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -192,10 +171,13 @@ const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) =>
               height={60}
             />
             <YAxis
-              domain={['dataMin - 0.1', 'dataMax + 0.1']}
-              allowDecimals={true}
+              width={80}
+              domain={isInteger ? ['dataMin - 1', 'dataMax + 1'] : ['dataMin - 0.1', 'dataMax + 0.1']}
+              allowDecimals={!isInteger}
               tickCount={5}
-              tickFormatter={(value) => (Math.round(value * 10) / 10).toFixed(1)}
+              tickFormatter={(value) =>
+                isInteger ? value.toFixed(0) : (Math.round(value * 10) / 10).toFixed(1)
+              }
             />
             {/*<YAxis
               domain={([dataMin, dataMax]: [number, number]) => {
@@ -212,7 +194,10 @@ const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) =>
               tickFormatter={(value) => value.toFixed(1)}
             />*/}
             <Tooltip  
-              formatter={(value: any) => parseFloat(value).toFixed(decimals)}
+              formatter={(value: any) => {
+                const num = parseFloat(value);
+                return Number.isInteger(num) ? num.toString() : num.toFixed(decimals);
+              }}
               labelFormatter={(label: string) => `Fecha: ${label}`}
             />
             <Legend content={renderCustomLegend} />

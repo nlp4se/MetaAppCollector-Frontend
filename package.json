@@ -46,7 +46,7 @@
     "sass": "^1.70.0"
   },
   "scripts": {
-    "start": "react-scripts start --port 8000",
+    "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

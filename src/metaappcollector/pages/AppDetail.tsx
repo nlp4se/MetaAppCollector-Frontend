@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Row, Col, Button, Image } from 'react-bootstrap';
+import { Row, Col, Button, Image, ButtonGroup, ToggleButton } from 'react-bootstrap';
 import { AppDetailDTO } from '../DTOs/AppDetailDTO';
 import AppService from '../services/AppService';
 import MetricService from '../services/MetricService';
 import { useApps } from '../contexts/AppsContext';
 import { MetricSummaryDTO } from '../DTOs/MetricSummaryDTO';
 import MetricDashboard from '../components/MetricDashboard';
+import { Period } from '../contexts/MetricDashboardContext';
+import { useMetricPeriod } from '../contexts/MetricDashboardContext';
 
 const AppDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +19,14 @@ const AppDetail: React.FC = () => {
   const metricService = new MetricService();
   const { removeAppFromList } = useApps();
   const [metrics, setMetrics] = useState<MetricSummaryDTO[]>([]);
+  const { period, setPeriod } = useMetricPeriod();
+  const periodOptions = [
+  { value: '1d', label: 'Day' },
+  { value: '7d', label: 'Week' },
+  { value: '30d', label: 'Month' },
+  { value: '90d', label: '3 Months' },
+  { value: '1y', label: 'Year' },
+  ];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -96,9 +106,29 @@ const AppDetail: React.FC = () => {
             </Button>
           </div>
         </div>
+        <ButtonGroup >
+          {periodOptions.map((opt) => (
+            <ToggleButton
+              key={opt.value}
+              type="radio"
+              variant="outline-primary"
+              name="global-period-selector"
+              id={`period-${opt.value}`}
+              value={opt.value}
+              checked={period === opt.value}
+              onChange={(e) => {
+                console.log("➡️ Clicat:", e.currentTarget.value);
+                setPeriod(e.currentTarget.value as Period);
+              }}
+              size="sm"
+            >
+              {opt.label}
+            </ToggleButton>
+          ))}
+        </ButtonGroup>
+
         {metrics.map((metric) => (
-          <div key={metric.id} className="my-5">
-            <h4>{metric.name}</h4>
+          <div key={metric.id} className="">
             <MetricDashboard appId={id!} metricId={metric.id.toString()} />
           </div>
         ))}
