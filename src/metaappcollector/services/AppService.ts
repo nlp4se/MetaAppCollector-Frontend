@@ -105,6 +105,7 @@ class AppService {
 
         if (!response.ok) {
             const errorData = await response.json();
+            console.error("❌ Error del servidor:", errorData);
             return { errors: errorData };
         }
 

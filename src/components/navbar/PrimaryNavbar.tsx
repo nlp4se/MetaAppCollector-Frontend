@@ -139,6 +139,7 @@ const PrimaryNavBar = () => {
                         <div ref={userDropdownRef}>
                             <Button className="mr-2 btn-secondary" onClick={toggleUserDropdown}>
                                 <b>{userData?.name} {userData?.family_name}</b>
+                                <b> {localStorage.getItem('USERNAME')} </b>
                             </Button>
                             <Dropdown show={userDropdownOpen} align="start">
                                 <DropdownMenuUser />

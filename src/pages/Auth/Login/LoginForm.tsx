@@ -5,13 +5,15 @@ import Footer from "../../../components/footer/Footer";
 import Logo from '../../../assets/static/images/logos/logo-GESSI.jpg';
 import './LoginForm.css';
 import { useNavigate } from 'react-router-dom';
+import { useApps } from '../../../metaappcollector/contexts/AppsContext';
+
 
 const LoginForm = () => {
     const [formData, setFormData] = useState({
         email: '',
         password: '',
     });
-    const [backend, setBackend] = useState<'metaapp' | 'reminer'>('reminer');
+    const [backend, setBackend] = useState<'metaapp' | 'reminer'>('metaapp');
 
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
@@ -21,6 +23,7 @@ const LoginForm = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const { refreshApps } = useApps();
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -57,6 +60,8 @@ const LoginForm = () => {
                 } else {
                     localStorage.setItem('METAAPP_ACCESS_TOKEN', responseBody.access);
                     localStorage.setItem('METAAPP_REFRESH_TOKEN', responseBody.refresh);
+                    localStorage.setItem('USERNAME', formData.email);
+                    await refreshApps();
                     navigate('/meta-app-collector');
                 }
             } else {
@@ -88,22 +93,36 @@ const LoginForm = () => {
                         <Form.Group controlId="backend" className="mb-3">
                             <Form.Label className="fw-semibold">Backend</Form.Label>
                             <Form.Select name="backend" value={backend} onChange={(e) => setBackend(e.target.value as 'metaapp' | 'reminer')}>
-                                <option value="reminer">REMINER</option>
                                 <option value="metaapp">MetaAppCollector</option>
+                                <option value="reminer">RE-Miner</option>
                             </Form.Select>
                         </Form.Group>
 
+                        {backend === 'reminer' && (
                         <Form.Group controlId="email" className="mb-3">
-                            <Form.Label className="fw-semibold">Email / Username</Form.Label>
+                            <Form.Label className="fw-semibold">Email</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="email"
                                 value={formData.email}
                                 onChange={handleChange}
-                                placeholder="Enter your email or username"
+                                placeholder="Enter your email"
                                 required
                             />
-                        </Form.Group>
+                        </Form.Group>)}
+
+                        {backend === 'metaapp' && (
+                        <Form.Group controlId="email" className="mb-3">
+                            <Form.Label className="fw-semibold">Username</Form.Label>
+                            <Form.Control
+                                type="text"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                placeholder="Enter your username"
+                                required
+                            />
+                        </Form.Group>)}
 
                         <Form.Group controlId="password" className="mb-3">
                             <Form.Label className="fw-semibold">Password</Form.Label>

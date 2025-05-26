@@ -89,7 +89,7 @@ const SignUpForm = () => {
               <Form.Label className="fw-semibold">Backend</Form.Label>
               <Form.Select name="backend" value={backend} onChange={(e) => setBackend(e.target.value as 'metaapp' | 'reminer')}>
                 <option value="metaapp">MetaAppCollector</option>
-                <option value="reminer">REMINER</option>
+                <option value="reminer">RE-Miner</option>
               </Form.Select>
             </Form.Group>
 
