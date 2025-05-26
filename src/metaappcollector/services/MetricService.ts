@@ -1,8 +1,9 @@
 import { MetricDashboardDTO } from '../DTOs/MetricDashboardDTO';
 import { MetricSummaryDTO } from '../DTOs/MetricSummaryDTO';
+import { METAAPP_API_URL } from '../../config';
+import { authFetch } from './api/authFetch';
 
 class MetricService {
-  API_URL = 'http://127.0.0.1:8000/api/';
 
   private getAuthHeaders(): HeadersInit {
         const token = localStorage.getItem('METAAPP_ACCESS_TOKEN');
@@ -13,7 +14,7 @@ class MetricService {
 
   async fetchMetrics(): Promise<MetricSummaryDTO[]> {
       try {
-          const response = await fetch(`${this.API_URL}metrics/`, {
+          const response = await authFetch(`${METAAPP_API_URL}metrics/`, {
               headers: this.getAuthHeaders()
           });
           if (!response.ok) {
@@ -28,11 +29,11 @@ class MetricService {
 
   async fetchMetricDashboard(appId: string, metricId: string): Promise<MetricDashboardDTO | null> {
     try {
-      const response = await fetch(`${this.API_URL}apps/${appId}/metrics/${metricId}/`, {
+      const response = await authFetch(`${METAAPP_API_URL}apps/${appId}/metrics/${metricId}/`, {
         headers: this.getAuthHeaders()
       });
       if (!response.ok) {
-        throw new Error('Failed to fetch metric dashboard');
+        throw new Error('Failed to authFetch metric dashboard');
       }
 
       return await response.json();
@@ -44,7 +45,7 @@ class MetricService {
 
   async fetchMetricsById(metricId: string): Promise<MetricSummaryDTO[]> {
         try {
-            const response = await fetch(`${this.API_URL}metrics/${metricId}/`, {
+            const response = await authFetch(`${METAAPP_API_URL}metrics/${metricId}/`, {
                 headers: this.getAuthHeaders()
             });
             if (!response.ok) {
