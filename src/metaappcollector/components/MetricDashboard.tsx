@@ -12,7 +12,7 @@ import {
   Legend,
 } from 'recharts';
 import { Card, ButtonGroup, ToggleButton } from 'react-bootstrap';
-import { useMetricPeriod } from '../contexts/MetricDashboardContext';
+import { useMetricPeriod, Period } from '../contexts/MetricDashboardContext';
 
 interface MetricDashboardProps {
   appId: string;
@@ -22,10 +22,33 @@ interface MetricDashboardProps {
 const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) => {
   const [metricData, setMetricData] = useState<MetricDashboardDTO | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { period } = useMetricPeriod();
+  const { period, referenceDate } = useMetricPeriod();
   const [visibleSources, setVisibleSources] = useState<Record<string, boolean>>({});
   const decimals = 4;
   
+  function getDateRange(referenceDate: Date, period: Period): [Date, Date] {
+  const end = new Date(referenceDate); // copia segura
+  let start = new Date(referenceDate); // copia segura
+
+  if (period === '7d') {
+    start.setDate(end.getDate() - 6); // 7 días incluyendo hoy
+  } else if (period === '30d') {
+    start.setMonth(end.getMonth() - 1);
+    // Corrige casos como 31 marzo -> 28 febrero
+    if (start.getDate() !== end.getDate()) {
+      const lastDayOfMonth = new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
+      start.setDate(Math.min(end.getDate(), lastDayOfMonth));
+    }
+  } else if (period === 'all') {
+    start = new Date(0); // desde el inicio de los tiempos (1970-01-01)
+  }
+
+  // Asegurar que ambos estén a medianoche para igualdad precisa
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+
+  return [start, end];
+}
   useEffect(() => {
       const fetchData = async () => {
         if (appId && metricId) {
@@ -47,11 +70,11 @@ const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) =>
 
   const filterHistoryByPeriod = (
     history: { date: string; value: number }[],
-    period: '1d' | '7d' | '30d' | '90d' | '1y'
+    period: '7d' | '30d' | 'all'
   ) => {
-    const now = new Date();
+    const now = new Date(referenceDate);
     const fromDate = new Date();
-    const daysMap = { '1d': 1, '7d': 7, '30d': 30, '90d': 90, '1y': 365 };
+    const daysMap = { '7d': 7, '30d': 30, 'all': 365 };
     fromDate.setDate(now.getDate() - daysMap[period]);
     return history.filter(({ date }) => new Date(date) >= fromDate);
   };
@@ -59,21 +82,9 @@ const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) =>
   const fillMissingDates = (
   allHistories: Record<string, { date: string; value: number }[]>
 ) => {
-  const allDates = new Set<string>();
-  Object.values(allHistories).forEach((hist) =>
-    hist.forEach((entry) => allDates.add(entry.date))
-  );
+  const { referenceDate, period } = useMetricPeriod();
+  const [startDate, endDate] = getDateRange(referenceDate, period);
 
-  const sortedDates = Array.from(allDates).sort();
-
-  if (sortedDates.length === 0) return [];
-
-  // 🆕 Añadimos días vacíos hasta hoy (si falta)
-  const startDate = new Date(sortedDates[0]);
-  const endDate = new Date(); // hoy
-  console.log('startDate', startDate);
-  endDate.setHours(0, 0, 0, 0);
-  endDate.setDate(endDate.getDate() + 1);
   const allDateStrings: string[] = [];
   for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
     allDateStrings.push(d.toISOString().split('T')[0]);
@@ -88,6 +99,7 @@ const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) =>
     return entry;
   });
 };
+
 
   if (isLoading) return <div>Loading...</div>;
   if (!metricData) return <div>No data available</div>;
@@ -172,13 +184,31 @@ const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) =>
             />
             <YAxis
               width={80}
-              domain={isInteger ? ['dataMin - 1', 'dataMax + 1'] : ['dataMin - 0.1', 'dataMax + 0.1']}
+              domain={([dataMin, dataMax]) =>
+                isInteger
+                  ? [Math.max(0, dataMin - 1), dataMax + 1]
+                  : [Math.max(0, dataMin - 0.1), Math.round((dataMax + 0.1) * 10) / 10]
+              }
               allowDecimals={!isInteger}
               tickCount={5}
               tickFormatter={(value) =>
                 isInteger ? value.toFixed(0) : (Math.round(value * 10) / 10).toFixed(1)
               }
             />
+            {/*
+            <YAxis
+              width={80}
+              domain={([dataMin, dataMax]) => [
+                0,
+                isInteger ? dataMax + 1 : Math.round((dataMax + 0.1) * 10) / 10
+              ]}
+              allowDecimals={!isInteger}
+              tickCount={5}
+              tickFormatter={(value) =>
+                isInteger ? value.toFixed(0) : (Math.round(value * 10) / 10).toFixed(1)
+              }
+            />
+            */}
             {/*<YAxis
               domain={([dataMin, dataMax]: [number, number]) => {
                 const min = Math.floor(dataMin * 10) / 10;

@@ -19,13 +19,11 @@ const AppDetail: React.FC = () => {
   const metricService = new MetricService();
   const { removeAppFromList } = useApps();
   const [metrics, setMetrics] = useState<MetricSummaryDTO[]>([]);
-  const { period, setPeriod } = useMetricPeriod();
+  const { period, setPeriod, referenceDate, setReferenceDate } = useMetricPeriod();
   const periodOptions = [
-  { value: '1d', label: 'Day' },
   { value: '7d', label: 'Week' },
   { value: '30d', label: 'Month' },
-  { value: '90d', label: '3 Months' },
-  { value: '1y', label: 'Year' },
+  { value: 'all', label: 'All' },
   ];
 
   useEffect(() => {
@@ -126,6 +124,20 @@ const AppDetail: React.FC = () => {
             </ToggleButton>
           ))}
         </ButtonGroup>
+        <div className="mt-3">
+          <label htmlFor="reference-date" className="me-2"><strong>Reference date:</strong></label>
+          <input
+            type="date"
+            id="reference-date"
+            value={referenceDate.toISOString().split('T')[0]}
+            max={new Date().toISOString().split('T')[0]} // evitar fechas futuras
+            onChange={(e) => {
+              const newDate = new Date(e.target.value);
+              console.log("📅 Nueva fecha seleccionada:", newDate.toDateString());
+              setReferenceDate(newDate);
+            }}
+          />
+        </div>
 
         {metrics.map((metric) => (
           <div key={metric.id} className="">
