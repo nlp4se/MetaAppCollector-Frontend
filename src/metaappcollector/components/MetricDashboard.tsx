@@ -27,7 +27,8 @@ const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) =>
   const decimals = 4;
   
   function getDateRange(referenceDate: Date, period: Period): [Date, Date] {
-  const end = new Date(referenceDate); // copia segura
+  const end = new Date(referenceDate);
+   end.setDate(end.getDate() + 1);// copia segura
   let start = new Date(referenceDate); // copia segura
 
   if (period === '7d') {
@@ -89,7 +90,6 @@ const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) =>
   for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
     allDateStrings.push(d.toISOString().split('T')[0]);
   }
-
   return allDateStrings.map((date) => {
     const entry: any = { date };
     for (const [source, hist] of Object.entries(allHistories)) {
