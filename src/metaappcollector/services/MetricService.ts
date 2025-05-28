@@ -14,7 +14,7 @@ class MetricService {
 
   async fetchMetrics(): Promise<MetricSummaryDTO[]> {
       try {
-          const response = await authFetch(`${METAAPP_API_URL}metrics/`, {
+          const response = await authFetch(`${METAAPP_API_URL}metrics/?only_numeric=true`, {
               headers: this.getAuthHeaders()
           });
           if (!response.ok) {

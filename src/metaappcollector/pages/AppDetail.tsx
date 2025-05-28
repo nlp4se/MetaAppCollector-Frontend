@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Row, Col, Button, Image, ButtonGroup, ToggleButton } from 'react-bootstrap';
+import { Row, Col, Button, Image, ButtonGroup, ToggleButton, Card } from 'react-bootstrap';
 import { AppDetailDTO } from '../DTOs/AppDetailDTO';
 import AppService from '../services/AppService';
 import MetricService from '../services/MetricService';
@@ -63,6 +63,49 @@ const AppDetail: React.FC = () => {
   if (isLoading) return <div>Loading...</div>;
   if (!app) return <div>App not found</div>;
 
+  const handleExportAllMetricsToCSV = async () => {
+    if (!id || metrics.length === 0) return;
+
+    const metricService = new MetricService();
+    const results = await Promise.all(
+      metrics.map((m) => metricService.fetchMetricDashboard(id, m.id.toString()))
+    );
+
+    const rows: string[] = [];
+    rows.push("Metric;Date;Source;Value");
+
+    results.forEach((data) => {
+      if (!data || (data.metric.value_type !== "integer" && data.metric.value_type !== "float")) return;
+
+      data.sources.forEach((source) => {
+        const grouped: Record<string, number[]> = {};
+
+        source.history.forEach(({ date, value }) => {
+          const day = new Date(date).toISOString().split("T")[0];
+          const val = typeof value === "number" ? value : parseFloat(String(value));
+          if (!grouped[day]) grouped[day] = [];
+          grouped[day].push(val);
+        });
+
+        Object.entries(grouped).forEach(([date, values]) => {
+          const avg = values.reduce((a, b) => a + b, 0) / values.length;
+          rows.push([data.metric.name, date, source.source, avg.toFixed(4)].join(";"));
+        });
+      });
+    });
+
+    const csvContent = rows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "metrics.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+
   return (
     <Row className="min-vh-100">
       <Col md={9} className="p-4">
@@ -103,42 +146,53 @@ const AppDetail: React.FC = () => {
               Remove
             </Button>
           </div>
-        </div>
-        <ButtonGroup >
-          {periodOptions.map((opt) => (
-            <ToggleButton
-              key={opt.value}
-              type="radio"
-              variant="outline-primary"
-              name="global-period-selector"
-              id={`period-${opt.value}`}
-              value={opt.value}
-              checked={period === opt.value}
-              onChange={(e) => {
-                console.log("➡️ Clicat:", e.currentTarget.value);
-                setPeriod(e.currentTarget.value as Period);
-              }}
+          <div className="d-flex justify-content-end gap-2 mt-3">
+            <Button
+              variant="success"
               size="sm"
+              onClick={handleExportAllMetricsToCSV}
             >
-              {opt.label}
-            </ToggleButton>
-          ))}
-        </ButtonGroup>
-        <div className="mt-3">
-          <label htmlFor="reference-date" className="me-2"><strong>Reference date:</strong></label>
-          <input
-            type="date"
-            id="reference-date"
-            value={referenceDate.toISOString().split('T')[0]}
-            max={new Date().toISOString().split('T')[0]} // evitar fechas futuras
-            onChange={(e) => {
-              const newDate = new Date(e.target.value);
-              console.log("📅 Nueva fecha seleccionada:", newDate.toDateString());
-              setReferenceDate(newDate);
-            }}
-          />
+              Export all metrics to CSV
+            </Button>
+          </div>
+          <Card className="my-3 p-3 shadow-sm">
+            <h5 className="mb-3">Filters</h5>
+            <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
+              {/* Selector de període */}
+              <ButtonGroup size="sm">
+                {periodOptions.map((opt) => (
+                  <ToggleButton
+                    key={opt.value}
+                    type="radio"
+                    variant="outline-primary"
+                    name="global-period-selector"
+                    id={`period-${opt.value}`}
+                    value={opt.value}
+                    checked={period === opt.value}
+                    onChange={(e) => setPeriod(e.currentTarget.value as Period)}
+                  >
+                    {opt.label}
+                  </ToggleButton>
+                ))}
+              </ButtonGroup>
+              <div className="d-flex align-items-center gap-2">
+                <label htmlFor="reference-date" className="mb-0"><strong>Reference date:</strong></label>
+                <input
+                  type="date"
+                  id="reference-date"
+                  className="form-control form-control-sm"
+                  style={{ width: "150px" }}
+                  value={referenceDate.toISOString().split('T')[0]}
+                  max={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => {
+                    const newDate = new Date(e.target.value);
+                    setReferenceDate(newDate);
+                  }}
+                />
+              </div>    
+            </div>
+          </Card>
         </div>
-
         {metrics.map((metric) => (
           <div key={metric.id} className="">
             <MetricDashboard appId={id!} metricId={metric.id.toString()} />
