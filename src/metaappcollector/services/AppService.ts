@@ -6,20 +6,10 @@ import { authFetch } from './api/authFetch';
 
 class AppService {
 
-    private getAuthHeaders(): HeadersInit {
-        const token = localStorage.getItem('METAAPP_ACCESS_TOKEN');
-        return token
-            ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-            : { 'Content-Type': 'application/json' };
-    }
-
     async fetchApps(): Promise<AppSummaryDTO[]> {
         try {
             console.log('Fetching apps from:', `${METAAPP_API_URL}apps/`);
-            console.log('Auth Headers:', this.getAuthHeaders());
-            const response = await authFetch(`${METAAPP_API_URL}apps/`, {
-                headers: this.getAuthHeaders()
-            });
+            const response = await authFetch(`${METAAPP_API_URL}apps/`);
 
             if (!response.ok) {
                 throw new Error('Network response was not ok');
@@ -38,10 +28,7 @@ class AppService {
 
     async fetchAppById(appId: string): Promise<AppDetailDTO | null> {
         try {
-            const response = await authFetch(`${METAAPP_API_URL}apps/${appId}/`, {
-                headers: this.getAuthHeaders()
-            });
-
+            const response = await authFetch(`${METAAPP_API_URL}apps/${appId}/`);
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
@@ -72,7 +59,6 @@ class AppService {
       try {
         const response = await authFetch(`${METAAPP_API_URL}apps/`, {
         method: 'POST',
-        headers: this.getAuthHeaders(),
         body: JSON.stringify({
             code: appData.code,
             name: appData.name,
@@ -99,7 +85,6 @@ class AppService {
         try {
         const response = await authFetch(`${METAAPP_API_URL}apps/${id}/`, {
             method: 'PUT',
-            headers: this.getAuthHeaders(),
             body: JSON.stringify(data),
         });
 
@@ -119,7 +104,6 @@ class AppService {
         try {
             const response = await authFetch(`${METAAPP_API_URL}apps/${appId}/`, {
             method: 'DELETE',
-            headers: this.getAuthHeaders(),
             });
 
             return response.ok;

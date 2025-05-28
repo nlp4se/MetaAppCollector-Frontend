@@ -29,12 +29,13 @@ const DropdownMenuUser = () => {
 
             localStorage.removeItem('REMINER_ACCESS_TOKEN');
             localStorage.removeItem('REMINER_REFRESH_TOKEN');
+            localStorage.removeItem('USER_ID');
             } else if (activeBackend === 'metaapp') {
             localStorage.removeItem('METAAPP_ACCESS_TOKEN');
             localStorage.removeItem('METAAPP_REFRESH_TOKEN');
+            localStorage.removeItem('USERNAME');
             }
 
-            localStorage.removeItem('USER_ID');
             localStorage.removeItem('ACTIVE_BACKEND');
             navigate('/login');
         } catch (error: any) {
