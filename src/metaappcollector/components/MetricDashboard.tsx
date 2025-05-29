@@ -73,32 +73,68 @@ const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) =>
     history: { date: string; value: number }[],
     period: '7d' | '30d' | 'all'
   ) => {
-    const now = new Date(referenceDate);
-    const fromDate = new Date();
-    const daysMap = { '7d': 7, '30d': 30, 'all': 365 };
-    fromDate.setDate(now.getDate() - daysMap[period]);
-    return history.filter(({ date }) => new Date(date) >= fromDate);
+    const endDate = new Date(referenceDate);
+    endDate.setHours(0, 0, 0, 0);
+
+    if (period === 'all') {
+      return history.filter(({ date }) => new Date(date) <= endDate);
+    }
+
+    const startDate = new Date(referenceDate);
+    if (period === '7d') {
+      startDate.setDate(startDate.getDate() - 6);
+    } else if (period === '30d') {
+      startDate.setDate(startDate.getDate() - 29);
+    }
+    startDate.setHours(0, 0, 0, 0);
+
+    return history.filter(({ date }) => {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      return d >= startDate && d <= endDate;
+    });
   };
 
-  const fillMissingDates = (
-  allHistories: Record<string, { date: string; value: number }[]>
-) => {
-  const { referenceDate, period } = useMetricPeriod();
-  const [startDate, endDate] = getDateRange(referenceDate, period);
 
-  const allDateStrings: string[] = [];
-  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-    allDateStrings.push(d.toISOString().split('T')[0]);
-  }
-  return allDateStrings.map((date) => {
-    const entry: any = { date };
-    for (const [source, hist] of Object.entries(allHistories)) {
-      const point = hist.find((h) => h.date === date);
-      entry[source] = point ? point.value : null;
+  const fillMissingDates = (
+    allHistories: Record<string, { date: string; value: number }[]>
+  ) => {
+    const { referenceDate, period } = useMetricPeriod();
+
+    // Si és 'all', no cal omplir dates buides — només fusionar per data
+    if (period === 'all') {
+      const dateMap: Record<string, any> = {};
+      
+      for (const [source, history] of Object.entries(allHistories)) {
+        history.forEach(({ date, value }) => {
+          if (!dateMap[date]) dateMap[date] = { date };
+          dateMap[date][source] = value;
+        });
+      }
+
+      const referenceDateISO = referenceDate.toISOString().split('T')[0];
+      return Object.values(dateMap)
+        .filter((row) => row.date <= referenceDateISO)
+        .sort((a, b) => (a.date > b.date ? 1 : -1));
     }
-    return entry;
-  });
-};
+
+    // Per als altres períodes, sí que s’omplen buits
+    const [startDate, endDate] = getDateRange(referenceDate, period);
+
+    const allDateStrings: string[] = [];
+    for (let d = new Date(startDate.getTime()); d <= endDate; d.setDate(d.getDate() + 1)) {
+      allDateStrings.push(d.toISOString().split('T')[0]);
+    }
+
+    return allDateStrings.map((date) => {
+      const entry: any = { date };
+      for (const [source, hist] of Object.entries(allHistories)) {
+        const point = hist.find((h) => h.date === date);
+        entry[source] = point ? point.value : null;
+      }
+      return entry;
+    });
+  };
 
 
   if (isLoading) return <div>Loading...</div>;
