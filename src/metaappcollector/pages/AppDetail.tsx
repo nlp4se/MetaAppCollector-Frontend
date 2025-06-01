@@ -9,7 +9,23 @@ import { MetricSummaryDTO } from '../DTOs/MetricSummaryDTO';
 import MetricDashboard from '../components/MetricDashboard';
 import { Period } from '../contexts/MetricDashboardContext';
 import { useMetricPeriod } from '../contexts/MetricDashboardContext';
+import PollingService from '../services/PollingService';
+import { PollingStatusDTO } from '../DTOs/PollingStatusDTO';
+// Puedes usar los iconos de Bootstrap en vez de react-icons
+// Ejemplo usando Bootstrap Icons como SVGs embebidos:
+const CheckCircleIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="green" className="bi bi-check-circle" viewBox="0 0 16 16">
+    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14z"/>
+    <path d="M10.97 5.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 9.384a.75.75 0 1 1 1.06-1.06l1.094 1.093 3.492-4.438z"/>
+  </svg>
+);
 
+const TimesCircleIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="red" className="bi bi-x-circle" viewBox="0 0 16 16">
+    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14z"/>
+    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+  </svg>
+);
 const AppDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [app, setApp] = useState<AppDetailDTO | null>(null);
@@ -25,6 +41,8 @@ const AppDetail: React.FC = () => {
   { value: '30d', label: 'Month' },
   { value: 'all', label: 'All' },
   ];
+  const [metricPolling, setMetricPolling] = useState<PollingStatusDTO | null>(null);
+  const [reviewPolling, setReviewPolling] = useState<PollingStatusDTO | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,7 +57,20 @@ const AppDetail: React.FC = () => {
       setMetrics(fetchedMetrics);
       setIsLoading(false);
     };
+    const fetchPollingData = async () => {
+      if (!id) return;
+      const pollingService = new PollingService();
 
+      const [metricsPoll, reviewsPoll] = await Promise.all([
+        pollingService.fetchMetricPolling(id),
+        pollingService.fetchReviewPolling(id),
+      ]);
+
+      setMetricPolling(metricsPoll);
+      setReviewPolling(reviewsPoll);
+    };
+
+    fetchPollingData();
     fetchData();
   }, [id]);
 
@@ -155,6 +186,44 @@ const AppDetail: React.FC = () => {
               Export all metrics to CSV
             </Button>
           </div>
+          {(metricPolling || reviewPolling) && (
+            <Card className="my-3 p-3 shadow-sm">
+              <h5 className="mb-3">Polling Status</h5>
+              <div className="d-flex gap-3 flex-wrap">
+                {[metricPolling, reviewPolling].map((poll, idx) => poll && (
+                  <Card key={poll.type} className="p-3 shadow-sm" style={{ flex: '1 1 300px' }}>
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <strong className="text-capitalize">
+                        {poll.type === 'metrics' ? '📊 Metrics' : '📝 Reviews'}
+                      </strong>
+                      {poll.enabled ? (
+                        <CheckCircleIcon />
+                      ) : (
+                        <TimesCircleIcon />
+                      )}
+                    </div>
+                    <div style={{ fontSize: '0.9rem' }}>
+                      <div><strong>Interval:</strong> {poll.intervalHours}h</div>
+                      <div><strong>Last run:</strong> {poll.lastRun || 'N/A'}</div>
+                      <div><strong>Next run:</strong> {poll.nextRun || 'N/A'}</div>
+                      <div><strong>Starts at:</strong> {poll.startAt || 'N/A'}</div>
+                    </div>
+                    <div className="text-end mt-2">
+                      <Button
+                        variant={poll.enabled ? "outline-danger" : "outline-success"}
+                        size="sm"
+                        //onClick={() => handleTogglePolling(poll.type, poll.enabled)}
+                      >
+                        {poll.enabled ? 'Disable' : 'Enable'}
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </Card>
+          )}
+
+
           <Card className="my-3 p-3 shadow-sm">
             <h5 className="mb-3">Filters</h5>
             <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">

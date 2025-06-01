@@ -1,7 +1,8 @@
 export interface PollingStatusDTO {
   type: 'metrics' | 'reviews';
   enabled: boolean;
-  frequencyHours: number;
-  lastRun: string;
-  nextRun: string;
+  intervalHours: number;
+  lastRun: string | null;
+  nextRun: string | null;
+  startAt: string | null;
 }
