@@ -11,6 +11,8 @@ import { Period } from '../contexts/MetricDashboardContext';
 import { useMetricPeriod } from '../contexts/MetricDashboardContext';
 import PollingService from '../services/PollingService';
 import { PollingStatusDTO } from '../DTOs/PollingStatusDTO';
+import { getEnabledCategories } from 'node:trace_events';
+import Swal from 'sweetalert2';
 // Puedes usar los iconos de Bootstrap en vez de react-icons
 // Ejemplo usando Bootstrap Icons como SVGs embebidos:
 const CheckCircleIcon = () => (
@@ -33,6 +35,7 @@ const AppDetail: React.FC = () => {
   const navigate = useNavigate();
   const appService = new AppService();
   const metricService = new MetricService();
+  const pollingService = new PollingService();
   const { removeAppFromList } = useApps();
   const [metrics, setMetrics] = useState<MetricSummaryDTO[]>([]);
   const { period, setPeriod, referenceDate, setReferenceDate } = useMetricPeriod();
@@ -59,8 +62,7 @@ const AppDetail: React.FC = () => {
     };
     const fetchPollingData = async () => {
       if (!id) return;
-      const pollingService = new PollingService();
-
+      
       const [metricsPoll, reviewsPoll] = await Promise.all([
         pollingService.fetchMetricPolling(id),
         pollingService.fetchReviewPolling(id),
@@ -77,17 +79,68 @@ const AppDetail: React.FC = () => {
   const handleDelete = async () => {
     if (!id) return;
 
-    const confirmed = window.confirm(`Are you sure you want to delete "${app?.name}"?`);
-    if (!confirmed) return;
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: `Do you really want to delete "${app?.name}"? This action cannot be undone.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!',
+    });
+
+    if (!result.isConfirmed) return;
 
     const success = await appService.deleteApp(id);
 
     if (success) {
-      console.log("Eliminando app con ID:", id);
+      Swal.fire('Deleted!', `"${app?.name}" has been deleted.`, 'success');
       removeAppFromList(id);
       navigate('/meta-app-collector');
     } else {
-      alert('Error deleting the app.');
+      Swal.fire('Error', 'There was a problem deleting the app.', 'error');
+    }
+  };
+
+  const handleTogglePolling = async (type: 'metrics' | 'reviews', enabled: boolean) => {
+    if (!id) return;
+
+    const action = enabled ? 'disable' : 'activate';
+    const result = await Swal.fire({
+      title: `Are you sure?`,
+      text: `Do you want to ${action} the ${type} polling?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: enabled ? '#d33' : '#3085d6',
+      cancelButtonColor: '#aaa',
+      confirmButtonText: enabled ? 'Yes, disable it' : 'Yes, activate it',
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      let updatedPolling;
+
+      if (type === 'metrics') {
+        updatedPolling = enabled
+          ? await pollingService.deactivateMetricPolling(id)
+          : await pollingService.activateMetricPolling(id);
+        setMetricPolling(updatedPolling);
+      } else if (type === 'reviews') {
+        updatedPolling = enabled
+          ? await pollingService.deactivateReviewPolling(id)
+          : await pollingService.activateReviewPolling(id);
+        setReviewPolling(updatedPolling);
+      }
+      Swal.fire({
+        title: 'Success',
+        text: `${type.charAt(0).toUpperCase() + type.slice(1)} polling ${enabled ? 'disabled' : 'activated'} successfully.`,
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false,
+      });
+  } catch (error) {
+      console.error(`Error toggling ${type} polling:`, error);
+      // Aquí pots afegir una notificació d'error si tens un sistema d'alertes
     }
   };
 
@@ -212,7 +265,7 @@ const AppDetail: React.FC = () => {
                       <Button
                         variant={poll.enabled ? "outline-danger" : "outline-success"}
                         size="sm"
-                        //onClick={() => handleTogglePolling(poll.type, poll.enabled)}
+                        onClick={() => handleTogglePolling(poll.type, poll.enabled)}
                       >
                         {poll.enabled ? 'Disable' : 'Enable'}
                       </Button>
