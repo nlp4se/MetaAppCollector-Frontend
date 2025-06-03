@@ -18,6 +18,8 @@ import MetaAppCollector from "../metaappcollector/pages/MetaAppCollector";
 import NewAppForm from "../metaappcollector/pages/NewAppForm";
 import AppDetail from "../metaappcollector/pages/AppDetail";
 import EditAppForm from "../metaappcollector/pages/EditAppForm";
+import LandingPage from "../metaappcollector/components/LandingPage";
+
 interface LayoutProps {
     children: ReactNode;
 }
@@ -55,6 +57,7 @@ const AuthenticatedRoutes: React.FC = () => {
                 <Route path="applications/:appId/reviews/:reviewId/analyze" element={<DefaultLayout><ReviewAnalyzer /></DefaultLayout>} />
                 <Route path="/tree-analyzer" element={<DefaultLayout><TreeAnalyzer /></DefaultLayout>} />
                 <Route path="/meta-app-collector" element={<DefaultLayout><MetaAppCollector /></DefaultLayout>}>
+                    <Route index element={<LandingPage />} />
                     <Route path="apps/:id" element={<AppDetail />} />
                     <Route path="apps/new" element={<NewAppForm />} />
                     <Route path="apps/:id/edit" element={<EditAppForm />} />

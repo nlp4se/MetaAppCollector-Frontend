@@ -47,7 +47,7 @@ const NewAppForm: React.FC = () => {
   };
 
   return (
-    <Row style={{ height: '100vh' }}>
+    <Row className="min-vh-100">
       <Col md={9} className="p-4">
         <div className="p-4">
           <h2>Create New App</h2>
