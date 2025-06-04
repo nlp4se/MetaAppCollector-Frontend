@@ -58,13 +58,19 @@ const AppDetail: React.FC = () => {
     }
   }, [id, app, removeAppFromList, navigate]);
 
-  const handleTogglePolling = useCallback(async (type: 'metrics' | 'reviews', enabled: boolean) => {
+  const handleTogglePolling = useCallback(async (type: 'metrics' | 'reviews', enabled: boolean, intervalHours: number) => {
     if (!id) return;
 
     const action = enabled ? 'disable' : 'activate';
     const result = await Swal.fire({
       title: 'Are you sure?',
-      text: `Do you want to ${action} the ${type} polling?`,
+      html: `Do you want to <strong>${action}</strong> the <strong>${type}</strong> polling?${
+        action === 'activate'
+          ? `<br><br>
+            A data collection will be triggered now,<br>
+            followed by automatic executions every <strong>${intervalHours}</strong> hours.`
+          : ''
+      }`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonColor: enabled ? '#d33' : '#3085d6',
@@ -79,10 +85,10 @@ const AppDetail: React.FC = () => {
       const updated = type === 'metrics'
         ? enabled
           ? await pollingService.deactivateMetricPolling(id)
-          : await pollingService.activateMetricPolling(id)
+          : await pollingService.activateMetricPolling(id, intervalHours)
         : enabled
           ? await pollingService.deactivateReviewPolling(id)
-          : await pollingService.activateReviewPolling(id);
+          : await pollingService.activateReviewPolling(id, intervalHours);
 
       type === 'metrics' ? setMetricPolling(updated) : setReviewPolling(updated);
 

@@ -16,9 +16,8 @@ class PollingService {
             type: 'metrics',
             enabled: data.is_active,
             intervalHours: data.interval_hours,
-            lastRun: data.periodic_task.last_run,
-            nextRun: data.next_run,
-            startAt: data.start_at,
+            lastRun: data.periodic_task.last_run_at ? new Date(data.periodic_task.last_run_at) : null,
+            nextRun: data.next_run ? new Date(data.next_run) : null,
             };
         } catch (error) {
             console.error('There was a problem with the authFetch operation:', error);
@@ -38,9 +37,8 @@ class PollingService {
             type: 'reviews',
             enabled: data.is_active,
             intervalHours: data.interval_hours,
-            lastRun: data.periodic_task.last_run,
-            nextRun: data.next_run,
-            startAt: data.start_at,
+            lastRun: data.periodic_task.last_run_at ? new Date(data.periodic_task.last_run_at) : null,
+            nextRun: data.next_run ? new Date(data.next_run) : null,
             };
         } catch (error) {
             console.error('There was a problem with the authFetch operation:', error);
@@ -48,21 +46,25 @@ class PollingService {
         }
     }
 
-    async activateMetricPolling(appId: string): Promise<PollingStatusDTO | null> {
+    async activateMetricPolling(appId: string, intervalHours?: number): Promise<PollingStatusDTO | null> {
         try {
-            const response = await authFetch(`${METAAPP_API_URL}polling/metrics/apps/${appId}/activate/`, {method: 'POST'});
+            const query = intervalHours ? `?interval_hours=${intervalHours}` : '';
+            const response = await authFetch(
+                `${METAAPP_API_URL}polling/metrics/apps/${appId}/activate/${query}`,
+                { method: 'POST' }
+            );
 
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
+
             const data = await response.json();
             return {
-            type: 'metrics',
-            enabled: data.is_active,
-            intervalHours: data.interval_hours,
-            lastRun: data.periodic_task.last_run,
-            nextRun: data.next_run,
-            startAt: data.start_at,
+                type: 'metrics',
+                enabled: data.is_active,
+                intervalHours: data.interval_hours,
+                lastRun: data.periodic_task.last_run ? new Date(data.periodic_task.last_run) : null,
+                nextRun: data.next_run ? new Date(data.next_run) : null,
             };
         } catch (error) {
             console.error('There was a problem with the authFetch operation:', error);
@@ -70,21 +72,25 @@ class PollingService {
         }
     }
 
-    async activateReviewPolling(appId: string): Promise<PollingStatusDTO | null> {
+    async activateReviewPolling(appId: string, intervalHours?: number): Promise<PollingStatusDTO | null> {
         try {
-            const response = await authFetch(`${METAAPP_API_URL}polling/reviews/apps/${appId}/activate/`, {method: 'POST'});
+            const query = intervalHours ? `?interval_hours=${intervalHours}` : '';
+            const response = await authFetch(
+                `${METAAPP_API_URL}polling/reviews/apps/${appId}/activate/${query}`,
+                { method: 'POST' }
+            );
 
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
+
             const data = await response.json();
             return {
-            type: 'reviews',
-            enabled: data.is_active,
-            intervalHours: data.interval_hours,
-            lastRun: data.periodic_task.last_run,
-            nextRun: data.next_run,
-            startAt: data.start_at,
+                type: 'reviews',
+                enabled: data.is_active,
+                intervalHours: data.interval_hours,
+                lastRun: data.periodic_task.last_run ? new Date(data.periodic_task.last_run) : null,
+                nextRun: data.next_run ? new Date(data.next_run) : null,
             };
         } catch (error) {
             console.error('There was a problem with the authFetch operation:', error);
@@ -104,9 +110,8 @@ class PollingService {
             type: 'metrics',
             enabled: data.is_active,
             intervalHours: data.interval_hours,
-            lastRun: data.periodic_task.last_run,
-            nextRun: data.next_run,
-            startAt: data.start_at,
+            lastRun: data.periodic_task.last_run ? new Date(data.periodic_task.last_run) : null,
+            nextRun: data.next_run ? new Date(data.next_run) : null,
             };
         } catch (error) {
             console.error('There was a problem with the authFetch operation:', error);
@@ -126,9 +131,8 @@ class PollingService {
             type: 'reviews',
             enabled: data.is_active,
             intervalHours: data.interval_hours,
-            lastRun: data.periodic_task.last_run,
-            nextRun: data.next_run,
-            startAt: data.start_at,
+            lastRun: data.periodic_task.last_run ? new Date(data.periodic_task.last_run) : null,
+            nextRun: data.next_run ? new Date(data.next_run) : null,
             };
         } catch (error) {
             console.error('There was a problem with the authFetch operation:', error);
