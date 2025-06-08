@@ -1,4 +1,4 @@
-import { Card, Button, Form } from 'react-bootstrap';
+import { Card, Button, Form, Row, Col } from 'react-bootstrap';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { PollingStatusDTO } from '../DTOs/PollingStatusDTO';
 import { useState } from 'react';
@@ -30,32 +30,34 @@ const PollingStatusCard: React.FC<Props> = ({ pollings, onTogglePolling }) => {
   return (
     <Card className="my-3 p-3 shadow-sm">
       <h5 className="mb-3">Polling Status</h5>
-      <div className="d-flex gap-3 flex-wrap">
+      <div className="d-flex flex-column gap-3">
         {pollings.map(
           (poll) =>
             poll && (
-              <Card key={poll.type} className="p-3 shadow-sm" style={{ flex: '1 1 300px' }}>
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                  <strong className="text-capitalize">
-                    {poll.type === 'metrics' ? '📊 Metrics' : '📝 Reviews'}
-                  </strong>
-                  <div className="d-flex align-items-center gap-1">
+              <Card key={poll.type} className="p-3 shadow-sm" style={{ marginBottom: 0 }}>
+                <Row className="align-items-center mb-2">
+                  <Col>
+                    <strong className="text-capitalize">
+                      {poll.type === 'metrics' ? '📊 Metrics' : '📝 Reviews'}
+                    </strong>
+                  </Col>
+                  <Col xs="auto" className="d-flex align-items-center gap-1">
                     <strong>Status:</strong>
                     {poll.enabled ? (
                       <CheckCircle color="green" size={20} />
                     ) : (
                       <XCircle color="red" size={20} />
                     )}
-                  </div>
-                </div>
+                  </Col>
+                </Row>
 
-                <div style={{ fontSize: '0.9rem' }}>
-                  <div className="mb-2 d-flex align-items-center gap-2">
-                    <span style={{ whiteSpace: 'nowrap' }}>
-                      <strong style={{ marginRight: '2px' }}>Interval</strong>
-                      (hours):
-                    </span>
-                    <div className="d-flex align-items-center gap-2">
+                <Row className="align-items-center text-sm mb-2">
+                  <Col md={4} className="mb-2 mb-md-0">
+                    <Row className="align-items-center">
+                      <Col xs="auto">
+                        <strong>Interval</strong> (hours):
+                      </Col>
+                      <Col xs="auto">
                         <Form.Control
                           type="number"
                           min={1}
@@ -70,61 +72,59 @@ const PollingStatusCard: React.FC<Props> = ({ pollings, onTogglePolling }) => {
                               }
                             }
                           }}
-                          style={{
-                            width: `${Math.max(2, String(editedIntervals[poll.type] ?? poll.intervalHours).length + 5)}ch`,
-                            cursor: !editMode[poll.type] ? 'default' : 'text',
-                            paddingLeft: '4px',
-                            paddingRight: '4px',
-                          }}
                           size="sm"
-                        />	
-                      {!poll.enabled && !editMode[poll.type] && (
-                        <Button
-                          variant="link"
-                          size="sm"
-                          className="p-0 text-decoration-none"
-                          onClick={() =>
-                            setEditMode((prev) => ({ ...prev, [poll.type]: true }))
-                          }
-                          title="Edit interval"
-                        >
-                          ✏️
-                        </Button>
-                      )}
-                      {editMode[poll.type] && (
-                        <div className="d-flex align-items-center gap-1">
+                          style={{ width: '5rem', paddingLeft: '6px', paddingRight: '6px' }}
+                        />
+                      </Col>
+                      <Col xs="auto" className="d-flex gap-1">
+                        {!poll.enabled && !editMode[poll.type] && (
                           <Button
                             variant="link"
                             size="sm"
-                            className="p-0 text-success text-decoration-none"
-                            onClick={() => {
-                              poll.intervalHours = editedIntervals[poll.type] ?? poll.intervalHours; // ⬅️ actualització local
-                              setEditMode((prev) => ({ ...prev, [poll.type]: false }));
-                            }}
-                            title="Save"
+                            className="p-0 text-decoration-none"
+                            onClick={() =>
+                              setEditMode((prev) => ({ ...prev, [poll.type]: true }))
+                            }
+                            title="Edit interval"
                           >
-                            ✅
+                            ✏️
                           </Button>
-                          <Button
-                            variant="link"
-                            size="sm"
-                            className="p-0 text-danger text-decoration-none"
-                            onClick={() => {
-                              setEditedIntervals((prev) => ({
-                                ...prev,
-                                [poll.type]: poll.intervalHours,
-                              }));
-                              setEditMode((prev) => ({ ...prev, [poll.type]: false }));
-                            }}
-                            title="Cancel"
-                          >
-                            ❌
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div>
+                        )}
+                        {editMode[poll.type] && (
+                          <>
+                            <Button
+                              variant="link"
+                              size="sm"
+                              className="p-0 text-success text-decoration-none"
+                              onClick={() => {
+                                poll.intervalHours = editedIntervals[poll.type] ?? poll.intervalHours;
+                                setEditMode((prev) => ({ ...prev, [poll.type]: false }));
+                              }}
+                              title="Save"
+                            >
+                              ✅
+                            </Button>
+                            <Button
+                              variant="link"
+                              size="sm"
+                              className="p-0 text-danger text-decoration-none"
+                              onClick={() => {
+                                setEditedIntervals((prev) => ({
+                                  ...prev,
+                                  [poll.type]: poll.intervalHours,
+                                }));
+                                setEditMode((prev) => ({ ...prev, [poll.type]: false }));
+                              }}
+                              title="Cancel"
+                            >
+                              ❌
+                            </Button>
+                          </>
+                        )}
+                      </Col>
+                    </Row>
+                  </Col>
+                  <Col md={4}>
                     <strong>Last run:</strong>{' '}
                     {!poll.enabled || poll.lastRun
                       ? formatDate(poll.lastRun)
@@ -138,27 +138,32 @@ const PollingStatusCard: React.FC<Props> = ({ pollings, onTogglePolling }) => {
                               })()
                             : null
                         )}
-                  </div>
-                  <div>
+                  </Col>
+
+                  <Col md={4}>
                     <strong>Next run:</strong> {formatDate(poll.nextRun)}
-                  </div>
-                </div>
-                <div className="text-end mt-2">
-                  <Button
-                    variant={poll.enabled ? 'outline-danger' : 'outline-success'}
-                    size="sm"
-                    onClick={() => {
-                      const newInterval = editedIntervals[poll.type] ?? poll.intervalHours;
-                      onTogglePolling(poll.type, poll.enabled, newInterval);
-                      setEditedIntervals((prev) => {
-                        const { [poll.type]: _, ...rest } = prev;
-                        return rest;
-                      });
-                    }}
-                  >
-                    {poll.enabled ? 'Disable' : 'Enable'}
-                  </Button>
-                </div>
+                  </Col>
+                </Row>
+
+                <Row className="text-end mt-2">
+                  <Col>
+                    <Button
+                      variant={poll.enabled ? 'outline-danger' : 'outline-success'}
+                      size="sm"
+                      onClick={() => {
+                        const newInterval =
+                          editedIntervals[poll.type] ?? poll.intervalHours;
+                        onTogglePolling(poll.type, poll.enabled, newInterval);
+                        setEditedIntervals((prev) => {
+                          const { [poll.type]: _, ...rest } = prev;
+                          return rest;
+                        });
+                      }}
+                    >
+                      {poll.enabled ? 'Disable' : 'Enable'}
+                    </Button>
+                  </Col>
+                </Row>
               </Card>
             )
         )}
