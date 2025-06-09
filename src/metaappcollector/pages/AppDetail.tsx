@@ -104,6 +104,64 @@ const AppDetail: React.FC = () => {
     }
   }, [id, setMetricPolling, setReviewPolling]);
 
+  const handleManualReviewPolling = useCallback(
+    async (dateFrom: string, dateTo: string) => {
+      if (!id) return;
+
+      if (!dateFrom || !dateTo) {
+        Swal.fire({
+          title: 'Missing dates',
+          text: 'Please select both a start and end date.',
+          icon: 'warning',
+        });
+        return;
+      }
+
+      const result = await Swal.fire({
+        title: 'Manual Polling',
+        html: `Do you want to manually fetch reviews for this app between<br><strong>${dateFrom}</strong> and <strong>${dateTo}</strong>?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#aaa',
+        confirmButtonText: 'Yes, fetch reviews',
+      });
+
+      if (!result.isConfirmed) return;
+
+      const pollingService = new PollingService();
+
+      try {
+        const ok = await pollingService.manualReviewPolling(id, dateFrom, dateTo);
+
+        if (ok) {
+          Swal.fire({
+            title: 'Success',
+            text: `Reviews fetched successfully between ${dateFrom} and ${dateTo}.`,
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false,
+          });
+        } else {
+          Swal.fire({
+            title: 'Error',
+            text: 'Something went wrong while fetching the reviews.',
+            icon: 'error',
+          });
+        }
+      } catch (err) {
+        console.error('Manual polling error:', err);
+        Swal.fire({
+          title: 'Unexpected Error',
+          text: String(err),
+          icon: 'error',
+        });
+      }
+    },
+    [id]
+  );
+
+
   const handleExportAllMetricsToCSV = useCallback(() => {
     if (!id || metrics.length === 0) {
       Swal.fire({
@@ -166,6 +224,7 @@ const AppDetail: React.FC = () => {
             <PollingStatusCard
               pollings={[metricPolling, reviewPolling]}
               onTogglePolling={handleTogglePolling}
+              onManualReviewPolling={handleManualReviewPolling}
             />
           )}
           <FiltersPanel

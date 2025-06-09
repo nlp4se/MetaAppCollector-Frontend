@@ -6,9 +6,10 @@ import { useState } from 'react';
 interface Props {
   pollings: (PollingStatusDTO | null)[];
   onTogglePolling: (type: 'metrics' | 'reviews', enabled: boolean, intervalHours: number) => void;
+  onManualReviewPolling: (from: string, to: string) => void;
 }
 
-const PollingStatusCard: React.FC<Props> = ({ pollings, onTogglePolling }) => {
+const PollingStatusCard: React.FC<Props> = ({ pollings, onTogglePolling, onManualReviewPolling }) => {
   const [editedIntervals, setEditedIntervals] = useState<Record<string, number>>({});
   const [editMode, setEditMode] = useState<Record<string, boolean>>({});
 
@@ -26,6 +27,11 @@ const PollingStatusCard: React.FC<Props> = ({ pollings, onTogglePolling }) => {
   const handleIntervalChange = (type: 'metrics' | 'reviews', value: number) => {
     setEditedIntervals((prev) => ({ ...prev, [type]: value }));
   };
+  const today = new Date().toISOString().split('T')[0];
+  const [manualDates, setManualDates] = useState<Record<string, { from: string; to: string }>>({
+    reviews: { from: today, to: today },
+  });
+  const [isFetchingManual, setIsFetchingManual] = useState(false);
 
   return (
     <Card className="my-3 p-3 shadow-sm">
@@ -139,12 +145,10 @@ const PollingStatusCard: React.FC<Props> = ({ pollings, onTogglePolling }) => {
                             : null
                         )}
                   </Col>
-
                   <Col md={4}>
                     <strong>Next run:</strong> {formatDate(poll.nextRun)}
                   </Col>
                 </Row>
-
                 <Row className="text-end mt-2">
                   <Col>
                     <Button
@@ -162,6 +166,60 @@ const PollingStatusCard: React.FC<Props> = ({ pollings, onTogglePolling }) => {
                     >
                       {poll.enabled ? 'Disable' : 'Enable'}
                     </Button>
+                    {poll.type === 'reviews' && (
+                      <Row className="mt-3">
+                        <Col md={4} className="text-start">
+                          <Form.Group controlId={`dateFrom-${poll.type}`}>
+                            <Form.Label className="text-start w-100 fw-bold">Date from</Form.Label>
+                            <Form.Control
+                              type="date"
+                              size="sm"
+                              value={manualDates[poll.type]?.from ?? ''}
+                              onChange={(e) =>
+                                setManualDates((prev) => ({
+                                  ...prev,
+                                  [poll.type]: {
+                                    ...prev[poll.type],
+                                    from: e.target.value,
+                                  },
+                                }))
+                              }
+                            />
+                          </Form.Group>
+                        </Col>
+                        <Col md={4} className="text-start">
+                          <Form.Group controlId={`dateTo-${poll.type}`}>
+                            <Form.Label className="text-start w-100 fw-bold">Date to</Form.Label>
+                            <Form.Control
+                              type="date"
+                              size="sm"
+                              value={manualDates[poll.type]?.to ?? ''}
+                              onChange={(e) =>
+                                setManualDates((prev) => ({
+                                  ...prev,
+                                  [poll.type]: {
+                                    ...prev[poll.type],
+                                    to: e.target.value,
+                                  },
+                                }))
+                              }
+                            />
+                          </Form.Group>
+                        </Col>
+                        <Col md={4} className="d-flex align-items-end">
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            disabled={isFetchingManual || !manualDates[poll.type]?.from || !manualDates[poll.type]?.to}
+                            onClick={async () => {
+                              onManualReviewPolling(manualDates.reviews.from, manualDates.reviews.to)
+                            }}
+                          >
+                            {isFetchingManual ? 'Fetching...' : 'Manual fetch'}
+                          </Button>
+                        </Col>
+                      </Row>
+                    )}
                   </Col>
                 </Row>
               </Card>

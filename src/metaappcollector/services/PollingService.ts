@@ -139,6 +139,23 @@ class PollingService {
             return null;
         }
     }
+
+    async manualReviewPolling(appId: string, dateFrom: string, dateTo: string): Promise<boolean> {
+        try {
+            const url = `${METAAPP_API_URL}polling/manual/reviews/apps/${appId}/?date_from=${dateFrom}&date_to=${dateTo}`;
+            const response = await authFetch(url, { method: 'POST' });
+
+            if (!response.ok) {
+                throw new Error(`Manual review polling failed: ${response.statusText}`);
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Error during manual review polling:', error);
+            return false;
+        }
+    }
+
 }
 
 export default PollingService;
