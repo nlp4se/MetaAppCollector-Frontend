@@ -1,107 +1,242 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Row, Col, Button, Image } from 'react-bootstrap';
-import { AppDetailDTO } from '../DTOs/AppDetailDTO';
-import AppService from '../services/AppService';
-import MetricService from '../services/MetricService';
+import React, { useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Row, Col, Button, Spinner } from 'react-bootstrap';
+import Swal from 'sweetalert2';
 import { useApps } from '../contexts/AppsContext';
-import { MetricSummaryDTO } from '../DTOs/MetricSummaryDTO';
+import { useMetricPeriod } from '../contexts/MetricDashboardContext';
+
+import AppInfoCard from '../components/AppInfoCard';
+import FiltersPanel from '../components/FiltersPanel';
+import PollingStatusCard from '../components/PollingStatusCard';
 import MetricDashboard from '../components/MetricDashboard';
 
+import { useAppDetail } from '../hooks/useAppDetail';
+import AppService from '../services/AppService';
+import PollingService from '../services/PollingService';
+import { exportMetricsToCSV } from '../utils/exportMetricsToCSV';
+
 const AppDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const [app, setApp] = useState<AppDetailDTO | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    id,
+    app,
+    metrics,
+    metricPolling,
+    reviewPolling,
+    isLoading,
+    showLoading,
+    setMetricPolling,
+    setReviewPolling,
+  } = useAppDetail();
+
   const navigate = useNavigate();
-  const appService = new AppService();
-  const metricService = new MetricService();
   const { removeAppFromList } = useApps();
-  const [metrics, setMetrics] = useState<MetricSummaryDTO[]>([]);
+  const { period, setPeriod, referenceDate, setReferenceDate } = useMetricPeriod();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!id) return;
-
-      const [fetchedApp, fetchedMetrics] = await Promise.all([
-        appService.fetchAppById(id),
-        metricService.fetchMetrics(),
-      ]);
-
-      setApp(fetchedApp);
-      setMetrics(fetchedMetrics);
-      setIsLoading(false);
-    };
-
-    fetchData();
-  }, [id]);
-
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     if (!id) return;
 
-    const confirmed = window.confirm(`Are you sure you want to delete "${app?.name}"?`);
-    if (!confirmed) return;
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: `Do you really want to delete "${app?.name}"? This action cannot be undone.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!',
+    });
 
-    const success = await appService.deleteApp(id);
+    if (!result.isConfirmed) return;
+
+    const success = await new AppService().deleteApp(id);
 
     if (success) {
-      console.log("Eliminando app con ID:", id);
+      Swal.fire('Deleted!', `"${app?.name}" has been deleted.`, 'success');
       removeAppFromList(id);
       navigate('/meta-app-collector');
     } else {
-      alert('Error deleting the app.');
+      Swal.fire('Error', 'There was a problem deleting the app.', 'error');
     }
-  };
+  }, [id, app, removeAppFromList, navigate]);
 
-  if (isLoading) return <div>Loading...</div>;
-  if (!app) return <div>App not found</div>;
+  const handleTogglePolling = useCallback(async (type: 'metrics' | 'reviews', enabled: boolean, intervalHours: number) => {
+    if (!id) return;
+
+    const action = enabled ? 'disable' : 'activate';
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      html: `Do you want to <strong>${action}</strong> the <strong>${type}</strong> polling?${
+        action === 'activate'
+          ? `<br><br>
+            A data collection will be triggered now,<br>
+            followed by automatic executions every <strong>${intervalHours}</strong> hours.`
+          : ''
+      }`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: enabled ? '#d33' : '#3085d6',
+      cancelButtonColor: '#aaa',
+      confirmButtonText: enabled ? 'Yes, disable it' : 'Yes, activate it',
+    });
+
+    if (!result.isConfirmed) return;
+
+    const pollingService = new PollingService();
+    try {
+      const updated = type === 'metrics'
+        ? enabled
+          ? await pollingService.deactivateMetricPolling(id)
+          : await pollingService.activateMetricPolling(id, intervalHours)
+        : enabled
+          ? await pollingService.deactivateReviewPolling(id)
+          : await pollingService.activateReviewPolling(id, intervalHours);
+
+      type === 'metrics' ? setMetricPolling(updated) : setReviewPolling(updated);
+
+      Swal.fire({
+        title: 'Success',
+        text: `${type.charAt(0).toUpperCase() + type.slice(1)} polling ${enabled ? 'disabled' : 'activated'} successfully.`,
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      console.error(`Error toggling ${type} polling:`, error);
+    }
+  }, [id, setMetricPolling, setReviewPolling]);
+
+  const handleManualReviewPolling = useCallback(
+    async (dateFrom: string, dateTo: string) => {
+      if (!id) return;
+
+      if (!dateFrom || !dateTo) {
+        Swal.fire({
+          title: 'Missing dates',
+          text: 'Please select both a start and end date.',
+          icon: 'warning',
+        });
+        return;
+      }
+
+      const result = await Swal.fire({
+        title: 'Manual Polling',
+        html: `Do you want to manually fetch reviews for this app between<br><strong>${dateFrom}</strong> and <strong>${dateTo}</strong>?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#aaa',
+        confirmButtonText: 'Yes, fetch reviews',
+      });
+
+      if (!result.isConfirmed) return;
+
+      const pollingService = new PollingService();
+
+      try {
+        const ok = await pollingService.manualReviewPolling(id, dateFrom, dateTo);
+
+        if (ok) {
+          Swal.fire({
+            title: 'Success',
+            text: `Reviews fetched successfully between ${dateFrom} and ${dateTo}.`,
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false,
+          });
+        } else {
+          Swal.fire({
+            title: 'Error',
+            text: 'Something went wrong while fetching the reviews.',
+            icon: 'error',
+          });
+        }
+      } catch (err) {
+        console.error('Manual polling error:', err);
+        Swal.fire({
+          title: 'Unexpected Error',
+          text: String(err),
+          icon: 'error',
+        });
+      }
+    },
+    [id]
+  );
+
+
+  const handleExportAllMetricsToCSV = useCallback(() => {
+    if (!id || metrics.length === 0) {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'info',
+        title: 'No metrics to export',
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+      return;
+    }
+    exportMetricsToCSV(id, metrics).then(() => {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'CSV exported successfully',
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    });
+  }, [id, metrics]);
+
+  if (isLoading && showLoading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '60vh' }}>
+        <div className="text-center">
+          <Spinner animation="border" variant="primary" role="status" style={{ width: '4rem', height: '4rem' }} />
+          <p className="mt-3 text-secondary fs-5">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isLoading && !app) {
+    return (
+      <div className="text-center mt-5 text-muted">
+        <h4>App not found</h4>
+        <Button variant="link" onClick={() => navigate(-1)}>← Go back</Button>
+      </div>
+    );
+  }
+
+  if (!app) return null;
 
   return (
     <Row className="min-vh-100">
       <Col md={9} className="p-4">
         <div className="p-4">
-          <div className="text-center mb-4">
-            <Image src={app.iconUrl} alt={`${app.name} logo`} roundedCircle width={100} height={100} />
-          </div>
-          <h2 className="text-center">{app.name}</h2>
-          <p>{app.description || 'No description available.'}</p>
-          <p><strong>App Store ID:</strong> {app.appStoreId || 'N/A'}</p>
-          <p><strong>Play Store ID:</strong> {app.playStoreId || 'N/A'}</p>
-          <p><strong>Developer:</strong> {app.developer || 'N/A'}</p>
-          <p><strong>Release Date:</strong> {app.releaseDate || 'N/A'}</p>
-          <p><strong>PEGI:</strong> {app.pegi || 'N/A'}</p>
-          {app.sizeMB != null && (
-            <p><strong>Size:</strong> {app.sizeMB} MB</p>
+          <AppInfoCard
+            app={app}
+            onEdit={() => navigate(`/meta-app-collector/apps/${id}/edit`)}
+            onDelete={handleDelete}
+            onExportCSV={handleExportAllMetricsToCSV}
+          />
+          {(metricPolling || reviewPolling) && (
+            <PollingStatusCard
+              pollings={[metricPolling, reviewPolling]}
+              onTogglePolling={handleTogglePolling}
+              onManualReviewPolling={handleManualReviewPolling}
+            />
           )}
-          <div>
-            <strong>Available on:</strong>
-            <ul>
-              {app.availableOnAndroid && <li>Android</li>}
-              {app.availableOnIos && <li>iOS</li>}
-            </ul>
-          </div>
-          <div className="d-flex justify-content-end gap-2 mt-3">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => navigate(`/meta-app-collector/apps/${id}/edit`)}
-            >
-              Edit
-            </Button>
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={handleDelete}
-            >
-              Remove
-            </Button>
-          </div>
+          <FiltersPanel
+            period={period}
+            setPeriod={setPeriod}
+            referenceDate={referenceDate}
+            setReferenceDate={setReferenceDate}
+          />
+          {metrics.map((metric) => (
+            <MetricDashboard key={metric.id} appId={id!} metricId={metric.id.toString()} />
+          ))}
         </div>
-        {metrics.map((metric) => (
-          <div key={metric.id} className="my-5">
-            <h4>{metric.name}</h4>
-            <MetricDashboard appId={id!} metricId={metric.id.toString()} />
-          </div>
-        ))}
       </Col>
     </Row>
   );

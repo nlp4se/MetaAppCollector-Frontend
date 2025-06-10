@@ -2,7 +2,7 @@
   position: sticky;
   min-height: calc(100% - 55px + 15px);
   margin-top: -15px;
-  width: 60px;
+  width: 70px;
   background-color: #f8f9fa;
   transition: width 0.3s ease;
   overflow-x: hidden;
@@ -19,6 +19,7 @@
   padding: 10px;
   font-weight: bold;
   white-space: nowrap;
+  font-size: 1.1rem;
 }
 
 .app-item {
@@ -39,8 +40,8 @@
 }
 
 .app-icon {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -66,8 +67,8 @@
   color: #007bff;
   font-size: 20px;
   font-weight: bold;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   min-width: 32px;
   display: flex;

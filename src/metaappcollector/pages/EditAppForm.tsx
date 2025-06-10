@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import AppService from '../services/AppService';
 import { AppDetailDTO } from '../DTOs/AppDetailDTO';
 import { useApps } from '../contexts/AppsContext';
+import { ArrowLeft } from 'lucide-react';
 
 const EditAppForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -50,6 +51,10 @@ const EditAppForm: React.FC = () => {
   return (
     <Row style={{ minHeight: '100%' }}>
       <Col md={9} className="p-4">
+        <Button variant="link" className="mb-2 p-0 d-flex align-items-center gap-1" onClick={() => navigate(-1)}>
+          <ArrowLeft size={18} />
+          <span>Back</span>
+        </Button>
         <h2>Edit App</h2>
         {formErrors.length > 0 && (
           <div className="alert alert-danger">
