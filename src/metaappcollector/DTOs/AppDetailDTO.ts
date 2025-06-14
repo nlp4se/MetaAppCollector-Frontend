@@ -1,6 +1,5 @@
 export interface AppDetailDTO {
   id: string;
-  code: string;
   name: string;
   description: string;
   appStoreId: string;
