@@ -35,8 +35,8 @@ export const useAppDetail = () => {
 
     const fetchPollingData = async () => {
       const [metricsPoll, reviewsPoll] = await Promise.all([
-        pollingService.fetchMetricPolling(id),
-        pollingService.fetchReviewPolling(id),
+        pollingService.fetchPolling(id, "metrics"),
+        pollingService.fetchPolling(id, "reviews"),
       ]);
       setMetricPolling(metricsPoll);
       setReviewPolling(reviewsPoll);

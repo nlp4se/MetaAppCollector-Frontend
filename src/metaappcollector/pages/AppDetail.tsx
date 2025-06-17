@@ -82,13 +82,9 @@ const AppDetail: React.FC = () => {
 
     const pollingService = new PollingService();
     try {
-      const updated = type === 'metrics'
-        ? enabled
-          ? await pollingService.deactivateMetricPolling(id)
-          : await pollingService.activateMetricPolling(id, intervalHours)
-        : enabled
-          ? await pollingService.deactivateReviewPolling(id)
-          : await pollingService.activateReviewPolling(id, intervalHours);
+      const updated = enabled
+        ? await pollingService.deactivatePolling(id, type)
+        : await pollingService.activatePolling(id, type, intervalHours);
 
       type === 'metrics' ? setMetricPolling(updated) : setReviewPolling(updated);
 
