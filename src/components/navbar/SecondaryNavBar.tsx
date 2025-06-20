@@ -115,7 +115,7 @@ const SecondaryNavBar = () => {
                     <Nav.Item as="li" className="mx-lg-1">
                         <Link to="/meta-app-collector">
                             <Button className="text-white">
-                                <i className="mdi mdi-sitemap mdi-24px"/> Meta App Collector
+                                <i className="mdi mdi-apps-box mdi-24px"/> Meta App Collector
                             </Button>
                         </Link>
                     </Nav.Item>
