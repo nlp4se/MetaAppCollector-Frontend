@@ -4,37 +4,18 @@ import { PollingStatusDTO } from '../DTOs/PollingStatusDTO';
 
 class PollingService {
 
-    async fetchMetricPolling(appId: string): Promise<PollingStatusDTO | null> {
+    async fetchPolling(appId: string, poll_type: "metrics" | "reviews"): Promise<PollingStatusDTO | null> {
         try {
-            const response = await authFetch(`${METAAPP_API_URL}polling/metrics/apps/${appId}/`);
-
+            console.log(`Fetching polling status for appId: ${appId}, poll_type: ${poll_type}`);
+            const response = await authFetch(`${METAAPP_API_URL}apps/${appId}/polling/?poll_type=${poll_type}`);
+            console.log(response.status)
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                console.warn(`Polling fetch failed: ${response.status}`);
+                return null;
             }
             const data = await response.json();
             return {
-            type: 'metrics',
-            enabled: data.is_active,
-            intervalHours: data.interval_hours,
-            lastRun: data.periodic_task.last_run_at ? new Date(data.periodic_task.last_run_at) : null,
-            nextRun: data.next_run ? new Date(data.next_run) : null,
-            };
-        } catch (error) {
-            console.error('There was a problem with the authFetch operation:', error);
-            return null;
-        }
-    }
-    
-    async fetchReviewPolling(appId: string): Promise<PollingStatusDTO | null> {
-        try {
-            const response = await authFetch(`${METAAPP_API_URL}polling/reviews/apps/${appId}/`);
-
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            const data = await response.json();
-            return {
-            type: 'reviews',
+            type: poll_type,
             enabled: data.is_active,
             intervalHours: data.interval_hours,
             lastRun: data.periodic_task.last_run_at ? new Date(data.periodic_task.last_run_at) : null,
@@ -46,24 +27,25 @@ class PollingService {
         }
     }
 
-    async activateMetricPolling(appId: string, intervalHours?: number): Promise<PollingStatusDTO | null> {
+    async activatePolling(appId: string, poll_type: "metrics" | "reviews", intervalHours?: number): Promise<PollingStatusDTO | null> {
         try {
-            const query = intervalHours ? `?interval_hours=${intervalHours}` : '';
+            const query = intervalHours ? `&interval_hours=${intervalHours}` : '';
             const response = await authFetch(
-                `${METAAPP_API_URL}polling/metrics/apps/${appId}/activate/${query}`,
+                `${METAAPP_API_URL}apps/${appId}/polling/?poll_type=${poll_type}${query}`,
                 { method: 'POST' }
             );
 
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                console.warn(`Polling fetch failed: ${response.status}`);
+                return null;
             }
 
             const data = await response.json();
             return {
-                type: 'metrics',
+                type: poll_type,
                 enabled: data.is_active,
                 intervalHours: data.interval_hours,
-                lastRun: data.periodic_task.last_run ? new Date(data.periodic_task.last_run) : null,
+                lastRun: data.periodic_task.last_run_at ? new Date(data.periodic_task.last_run) : null,
                 nextRun: data.next_run ? new Date(data.next_run) : null,
             };
         } catch (error) {
@@ -72,77 +54,36 @@ class PollingService {
         }
     }
 
-    async activateReviewPolling(appId: string, intervalHours?: number): Promise<PollingStatusDTO | null> {
+    async deactivatePolling(appId: string, poll_type: "metrics" | "reviews"): Promise<PollingStatusDTO | null> {
         try {
-            const query = intervalHours ? `?interval_hours=${intervalHours}` : '';
             const response = await authFetch(
-                `${METAAPP_API_URL}polling/reviews/apps/${appId}/activate/${query}`,
-                { method: 'POST' }
+            `${METAAPP_API_URL}apps/${appId}/polling/?poll_type=${poll_type}`,
+            { method: 'DELETE' }
             );
 
             if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-
-            const data = await response.json();
-            return {
-                type: 'reviews',
-                enabled: data.is_active,
-                intervalHours: data.interval_hours,
-                lastRun: data.periodic_task.last_run ? new Date(data.periodic_task.last_run) : null,
-                nextRun: data.next_run ? new Date(data.next_run) : null,
-            };
-        } catch (error) {
-            console.error('There was a problem with the authFetch operation:', error);
+            console.warn(`Polling deactivation failed: ${response.status}`);
             return null;
-        }
-    }
-
-    async deactivateMetricPolling(appId: string): Promise<PollingStatusDTO | null> {
-        try {
-            const response = await authFetch(`${METAAPP_API_URL}polling/metrics/apps/${appId}/deactivate/`, {method: 'POST'});
-
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
             }
+
             const data = await response.json();
             return {
-            type: 'metrics',
+            type: poll_type,
             enabled: data.is_active,
             intervalHours: data.interval_hours,
-            lastRun: data.periodic_task.last_run ? new Date(data.periodic_task.last_run) : null,
+            lastRun: data.periodic_task?.last_run_at ? new Date(data.periodic_task.last_run_at) : null,
             nextRun: data.next_run ? new Date(data.next_run) : null,
             };
         } catch (error) {
-            console.error('There was a problem with the authFetch operation:', error);
+            console.error("There was a problem with the authFetch operation:", error);
             return null;
         }
-    }
-
-    async deactivateReviewPolling(appId: string): Promise<PollingStatusDTO | null> {
-        try {
-            const response = await authFetch(`${METAAPP_API_URL}polling/reviews/apps/${appId}/deactivate/`, {method: 'POST'});
-
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            const data = await response.json();
-            return {
-            type: 'reviews',
-            enabled: data.is_active,
-            intervalHours: data.interval_hours,
-            lastRun: data.periodic_task.last_run ? new Date(data.periodic_task.last_run) : null,
-            nextRun: data.next_run ? new Date(data.next_run) : null,
-            };
-        } catch (error) {
-            console.error('There was a problem with the authFetch operation:', error);
-            return null;
         }
-    }
 
     async manualReviewPolling(appId: string, dateFrom: string, dateTo: string): Promise<boolean> {
         try {
-            const url = `${METAAPP_API_URL}polling/manual/reviews/apps/${appId}/?date_from=${dateFrom}&date_to=${dateTo}`;
+            const url = `${METAAPP_API_URL}apps/${appId}/polling/reviews/manual/?date_from=${dateFrom}&date_to=${dateTo}`;
+            console.log(`Manual review polling URL: ${url}`);
             const response = await authFetch(url, { method: 'POST' });
 
             if (!response.ok) {

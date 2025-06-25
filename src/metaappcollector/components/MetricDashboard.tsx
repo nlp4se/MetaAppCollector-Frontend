@@ -220,51 +220,26 @@ const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) =>
             />
             <YAxis
               width={80}
-              domain={([dataMin, dataMax]) =>
-                isInteger
+              domain={([dataMin, dataMax]) => {
+                if (dataMax <= 1) {
+                  return [0, 1];
+                }
+                return isInteger
                   ? [Math.max(0, dataMin - 1), dataMax + 1]
-                  : [Math.max(0, dataMin - 0.1), Math.round((dataMax + 0.1) * 10) / 10]
-              }
-              allowDecimals={!isInteger}
-              tickCount={5}
-              tickFormatter={(value) =>
-                isInteger ? value.toFixed(0) : (Math.round(value * 10) / 10).toFixed(1)
-              }
-            />
-            {/*
-            <YAxis
-              width={80}
-              domain={([dataMin, dataMax]) => [
-                0,
-                isInteger ? dataMax + 1 : Math.round((dataMax + 0.1) * 10) / 10
-              ]}
-              allowDecimals={!isInteger}
-              tickCount={5}
-              tickFormatter={(value) =>
-                isInteger ? value.toFixed(0) : (Math.round(value * 10) / 10).toFixed(1)
-              }
-            />
-            */}
-            {/*<YAxis
-              domain={([dataMin, dataMax]: [number, number]) => {
-                const min = Math.floor(dataMin * 10) / 10;
-                const max = Math.ceil(dataMax * 10) / 10;
-                return [min, max];
+                  : [Math.max(0, dataMin - 0.1), Math.round((dataMax + 0.1) * 10) / 10];
               }}
-              ticks={Array.from({ length: 5 }, (_, i) => {
-                const min = Math.floor(metricData!.sources.flatMap(s =>
-                  s.history.map(p => typeof p.value === 'number' ? p.value : parseFloat(String(p.value))
-                )).reduce((a, b) => Math.min(a, b)) * 10) / 10;
-                return parseFloat((min + i * 0.1).toFixed(1));
-              })}
-              tickFormatter={(value) => value.toFixed(1)}
-            />*/}
+              allowDecimals={!isInteger}
+              tickCount={5}
+              tickFormatter={(value) =>
+                isInteger ? value.toFixed(0) : (Math.round(value * 10) / 10).toFixed(1)
+              }
+            />
             <Tooltip  
               formatter={(value: any) => {
                 const num = parseFloat(value);
                 return Number.isInteger(num) ? num.toString() : num.toFixed(decimals);
               }}
-              labelFormatter={(label: string) => `Fecha: ${label}`}
+              labelFormatter={(label: string) => `Date: ${label}`}
             />
             <Legend content={renderCustomLegend} />
             {metricData.sources.map((source, index) =>

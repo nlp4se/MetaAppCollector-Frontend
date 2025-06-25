@@ -35,7 +35,6 @@ class AppService {
             const app = await response.json();
             return {
             id: app.id,
-            code: app.code,
             name: app.name,
             description: app.description,
             developer: app.developer,
@@ -60,7 +59,6 @@ class AppService {
         const response = await authFetch(`${METAAPP_API_URL}apps/`, {
         method: 'POST',
         body: JSON.stringify({
-            code: appData.code,
             name: appData.name,
             description: appData.description,
             appstore_id: appData.appstoreId,

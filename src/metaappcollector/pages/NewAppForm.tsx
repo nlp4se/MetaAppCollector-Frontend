@@ -14,7 +14,6 @@ const NewAppForm: React.FC = () => {
   const [formErrors, setFormErrors] = useState<string[]>([]);
 
   const [formData, setFormData] = useState<AppCreateDTO>({
-    code: '',
     name: '',
     description: '',
     appstoreId: '',
@@ -63,17 +62,6 @@ const NewAppForm: React.FC = () => {
           )}
 
           <Form onSubmit={handleSubmit} className="mt-3">
-            <Form.Group className="mb-3">
-              <Form.Label>Code</Form.Label>
-              <Form.Control
-                type="text"
-                name="code"
-                value={formData.code}
-                onChange={handleChange}
-                required
-              />
-            </Form.Group>
-
             <Form.Group className="mb-3">
               <Form.Label>Name</Form.Label>
               <Form.Control
