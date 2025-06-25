@@ -239,7 +239,7 @@ const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) =>
                 const num = parseFloat(value);
                 return Number.isInteger(num) ? num.toString() : num.toFixed(decimals);
               }}
-              labelFormatter={(label: string) => `Fecha: ${label}`}
+              labelFormatter={(label: string) => `Date: ${label}`}
             />
             <Legend content={renderCustomLegend} />
             {metricData.sources.map((source, index) =>
