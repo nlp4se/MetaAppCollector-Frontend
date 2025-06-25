@@ -11,7 +11,7 @@ const LandingPage: React.FC = () => {
             <LineChart size={40} strokeWidth={2} />
           </div>
 
-          <h1 className="fw-bold display-5 mb-3">Benvingut a MetaAppCollector</h1>
+          <h1 className="fw-bold display-5 mb-3">Welcome to MetaAppCollector</h1>
 
           <p className="lead mb-3">
             Centralize, visualize, and analyze the performance of your mobile applications
