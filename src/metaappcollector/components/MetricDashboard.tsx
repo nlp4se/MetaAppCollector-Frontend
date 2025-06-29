@@ -26,6 +26,11 @@ const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) =>
   const [visibleSources, setVisibleSources] = useState<Record<string, boolean>>({});
   const decimals = 4;
   
+  let adjustedReferenceDate = new Date(referenceDate);
+  if (period === 'all') {
+    adjustedReferenceDate.setDate(adjustedReferenceDate.getDate() + 1);
+  }
+
   function getDateRange(referenceDate: Date, period: Period): [Date, Date] {
   const end = new Date(referenceDate);
    end.setDate(end.getDate() + 1);// copia segura
@@ -73,18 +78,18 @@ const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) =>
     history: { date: string; value: number }[],
     period: '7d' | '30d' | 'all'
   ) => {
-    const endDate = new Date(referenceDate);
+    const endDate = new Date(adjustedReferenceDate);
     endDate.setHours(0, 0, 0, 0);
 
     if (period === 'all') {
       return history.filter(({ date }) => new Date(date) <= endDate);
     }
 
-    const startDate = new Date(referenceDate);
+    const startDate = new Date(adjustedReferenceDate);
     if (period === '7d') {
       startDate.setDate(startDate.getDate() - 6);
     } else if (period === '30d') {
-      startDate.setDate(startDate.getDate() - 29);
+      startDate.setDate(startDate.getDate() - 30);
     }
     startDate.setHours(0, 0, 0, 0);
 
@@ -112,14 +117,14 @@ const MetricDashboard: React.FC<MetricDashboardProps> = ({ appId, metricId }) =>
         });
       }
 
-      const referenceDateISO = referenceDate.toISOString().split('T')[0];
+      const referenceDateISO = adjustedReferenceDate.toISOString().split('T')[0];
       return Object.values(dateMap)
         .filter((row) => row.date <= referenceDateISO)
         .sort((a, b) => (a.date > b.date ? 1 : -1));
     }
 
     // Per als altres períodes, sí que s’omplen buits
-    const [startDate, endDate] = getDateRange(referenceDate, period);
+    const [startDate, endDate] = getDateRange(adjustedReferenceDate, period);
 
     const allDateStrings: string[] = [];
     for (let d = new Date(startDate.getTime()); d <= endDate; d.setDate(d.getDate() + 1)) {

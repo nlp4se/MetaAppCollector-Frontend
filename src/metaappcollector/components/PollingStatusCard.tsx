@@ -27,9 +27,12 @@ const PollingStatusCard: React.FC<Props> = ({ pollings, onTogglePolling, onManua
   const handleIntervalChange = (type: 'metrics' | 'reviews', value: number) => {
     setEditedIntervals((prev) => ({ ...prev, [type]: value }));
   };
-  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const formattedYesterday = yesterday.toISOString().split('T')[0];
+
   const [manualDates, setManualDates] = useState<Record<string, { from: string; to: string }>>({
-    reviews: { from: today, to: today },
+    reviews: { from: formattedYesterday, to: formattedYesterday },
   });
   const [isFetchingManual, setIsFetchingManual] = useState(false);
 

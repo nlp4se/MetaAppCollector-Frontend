@@ -15,7 +15,7 @@ const LandingPage: React.FC = () => {
 
           <p className="lead mb-3">
             Centralize, visualize, and analyze the performance of your mobile applications
-            using data collected from Google Play, the App Store, and Reddit.
+            using data collected from Google Play, App Store, Reddit...
           </p>
 
           <p className="text-muted mb-4">
